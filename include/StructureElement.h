@@ -57,7 +57,6 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
   algebra::Vector3Ds coordinates;
 
   static bool get_is_setup(Model *m, ParticleIndex pi) {
-    std::cout << m->get_has_attribute(get_start_res_key(), pi) << " " << m->get_has_attribute(get_polarity_key(), pi) << std::endl;
     /*
     IMP_USAGE_CHECK(
         ( m->get_has_attribute(get_start_res_key(), pi) &&
@@ -156,11 +155,11 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     // residue list forwards or backwards
     if (get_polarity() == 1){
       for (unsigned int i=0; i<length; i++){
-        resindex_transform.push_back(i + get_start_res() + 1);
+        resindex_transform.push_back(i + get_start_res());
       }
     } else {
       for (unsigned int i=length; i>0; i--){
-        resindex_transform.push_back(i + get_start_res());
+        resindex_transform.push_back(i + get_start_res()-1);
       }      
     }
     return resindex_transform;
