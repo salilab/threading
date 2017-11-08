@@ -12,12 +12,12 @@
 #include <IMP/threading/threading_config.h>
 
 #include <IMP/core/MonteCarloMover.h>
-#include <IMP/core/XYZ.h>
+
 #include <IMP/base_types.h>
 #include <IMP/exception.h>
 #include <IMP/atom/Hierarchy.h>
-#include <IMP/atom/Residue.h>
-
+//#include <IMP/atom/Residue.h>
+//#include <IMP/core/XYZ.h>
 IMPTHREADING_BEGIN_NAMESPACE
 
 //! A mover for modifying the assignment of residues to a sequ
@@ -27,18 +27,15 @@ IMPTHREADING_BEGIN_NAMESPACE
     \see MonteCarlo
  */
 class IMPTHREADINGEXPORT SequenceBaseMover : public IMP::core::MonteCarloMover {
-  ParticleIndexes rpis_;
   ParticleIndex fpi_;
   IntKey start_res_;
   IntKey polarity_;
   Int original_;
-  IMP::atom::Hierarchy f_hier_;
-  IMP::atom::Hierarchies f_resis_;
 
-  IMP::core::XYZs xyzs_;
-  IMP::atom::ResidueTypes rtypes_;
+  //IMP::core::XYZs xyzs_;
+  //IMP::atom::ResidueTypes rtypes_;
 
-  void initialize(ParticleIndex fpi, ParticleIndexes rpis);
+  void initialize(ParticleIndex fpi);
 
  public:
   //! Move specified variables of particle pi within a ball of specified radius
@@ -49,7 +46,7 @@ class IMPTHREADINGEXPORT SequenceBaseMover : public IMP::core::MonteCarloMover {
   */
   //FragmentBaseMover(Model *m, ParticleIndexes pis, const IntKey &var,
   //          int max_trans);
- SequenceBaseMover(Model *m, ParticleIndex fpi, ParticleIndexes rpis);
+ SequenceBaseMover(Model *m, ParticleIndex fpi);
 
 
  protected:
