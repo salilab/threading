@@ -12,10 +12,18 @@ import io
 
 class Tests(IMP.test.TestCase):
 
-    def setup_structure_element(self, p, start_res, polarity, length, offset):
+    def setup_structure_element(self, p, start_res, polarity, length, offset, nres=10):
         IMP.threading.StructureElement.setup_particle(p, start_res, polarity, length, offset)
-        se = IMP.threading.StructureElement(p)  
-        return se     
+        se = IMP.threading.StructureElement(p) 
+
+        se.set_coordinates(self.make_coordinates(nres))
+        return se   
+
+    def make_coordinates(self, ncoord=3):
+        coords = []
+        for i in range(ncoord):
+            coords.append(IMP.algebra.Vector3D(1.1,0.1,i*2))
+        return coords
 
     def test_setup_particle(self):
         m = IMP.Model()
@@ -72,6 +80,32 @@ class Tests(IMP.test.TestCase):
         self.assertEqual(se.get_resindex_list(), [2,3,4,5,6])
         se.flip_polarity_key()
         self.assertEqual(se.get_resindex_list(), [6,5,4,3,2])
+
+    def test_get_coordinates(self):
+        m = IMP.Model()
+        p = IMP.Particle(m)
+        se = self.setup_structure_element(p, 2, 1, 5, 0) 
+        coordinates = self.make_coordinates(ncoord=10)
+        self.assertEqual(len(se.get_coordinates()), len(coordinates[0:5]))
+        self.assertEqual(se.get_coordinates()[1][2], coordinates[0:5][1][2])
+        se.set_offset_key(2)   
+        self.assertEqual(len(se.get_coordinates()), len(coordinates[2:7]))
+        self.assertEqual(se.get_coordinates()[1][2], coordinates[2:7][1][2])
+
+        se.set_length_key(3)
+        self.assertEqual(len(se.get_coordinates()), len(coordinates[2:5]))
+        self.assertEqual(se.get_coordinates()[1][2], coordinates[2:5][1][2])
+
+    def test_coordinate_resindex_compatability(self):
+        # Make sure the resindex list and coordinate list have the same number
+        # of elements.
+        m = IMP.Model()
+        p = IMP.Particle(m)
+        se = self.setup_structure_element(p, 2, 1, 5, 0) 
+
+        self.assertEqual(len(se.get_resindex_list()), len(se.get_coordinates()))
+
+      
 
 if __name__ == '__main__':
     IMP.test.main()
