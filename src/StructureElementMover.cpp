@@ -7,15 +7,8 @@
  */
 
 #include <IMP/threading/StructureElementMover.h>
-//#include <IMP/threading/StructureElement.h>
 
-//#include <IMP/atom/Fragment.h>
-#include <IMP/atom/Hierarchy.h>
-#include <IMP/atom/Selection.h>
-#include <IMP/core/XYZ.h>
-//#include <IMP/atom/Residue.h>
-//#include <IMP/particle_index.h>
-#include <IMP/algebra/vector_generators.h>
+
 
 IMPTHREADING_BEGIN_NAMESPACE
 
@@ -103,7 +96,7 @@ void StructureElementMover::transform_coordinates(){
   atom::Selection sel(h);
   sel.set_residue_indexes(se.get_resindex_list());
   ParticlesTemp oldsel = sel.get_selected_particles();
-  algebra::Vector3Ds new_coords = se.get_coordinates();
+  algebra::Vector3Ds new_coords = se.get_coordinates(); // does not take into account polarity!!
   for (unsigned int i=0; i<se.get_resindex_list().size(); i++) {
     core::XYZ coord(oldsel[i]);
     coord.set_coordinates(new_coords[i]);
@@ -112,18 +105,21 @@ void StructureElementMover::transform_coordinates(){
 
 void StructureElementMover::do_reject() {
   IMP_OBJECT_LOG;
+
   StructureElement se(get_model(), pi_);
-
+  zero_coordinates();
   //Return StructureElement key values to their original position
+  std::cout << orig_key_values_ << std::endl;
   se.set_all_keys(orig_key_values_);
-
   //Return the coordinates of the ThreadingSequence to their original value.
+  transform_coordinates();
 
 }
 
 ModelObjectsTemp StructureElementMover::do_get_inputs() const {
-  ModelObjectsTemp ret(1);
+  ModelObjectsTemp ret(2);
   ret[0] = get_model()->get_particle(pi_);
+  ret[0] = get_model()->get_particle(s_hier_pi_);
   //ModelObjectsTemp ret = {inp};
   return ret;
 }
