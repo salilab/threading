@@ -195,7 +195,7 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
   // Functions for modifying keys
 
   void set_all_keys(Floats vals){
-    IMP_USAGE_CHECK( (4 == sizeof(vals)), "Must pass exactly four values");
+    IMP_USAGE_CHECK( (4 == vals.size()), "Must pass exactly four values");
     set_start_res_key(vals[0]);
     set_polarity_key(vals[1]);
     set_length_key(vals[2]);
