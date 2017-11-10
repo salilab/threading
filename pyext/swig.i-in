@@ -2,9 +2,9 @@
 //IMP_SWIG_DECORATOR(IMP::example, ExampleDecorator, ExampleDecorators);
 //IMP_SWIG_VALUE_TEMPLATE(IMP::example, ExampleTemplateClassD)
 //IMP_SWIG_VALUE_TEMPLATE(IMP::example, ExampleTemplateClassD)
-IMP_SWIG_OBJECT(IMP::threading, SequenceBaseMover, SequenceBaseMovers)
+IMP_SWIG_OBJECT(IMP::threading, StructureElementMover, StructureElementMovers)
 IMP_SWIG_DECORATOR(IMP::threading, StructureElement, StructureElements)
 
 
-%include "IMP/threading/SequenceBaseMover.h"
+%include "IMP/threading/StructureElementMover.h"
 %include "IMP/threading/StructureElement.h"
