@@ -48,7 +48,7 @@ IMP::core::MonteCarloMoverResult StructureElementMover::do_propose() {
   if (se.get_start_res_is_optimized()) {
     r = statistics::internal::random_int(2) * 2 - 1;
     se.set_start_res_key(orig_key_values_[0] - r);
-    std::cout << "start_res: " << orig_key_values_[0] << " " << r << " " << se.get_start_res() << std::endl;
+    //std::cout << "start_res: " << orig_key_values_[0] << " " << r << " " << se.get_start_res() << std::endl;
   };
 
   if (se.get_polarity_is_optimized() && rand() % 100 < pct_flip_) {
@@ -58,18 +58,30 @@ IMP::core::MonteCarloMoverResult StructureElementMover::do_propose() {
   if (se.get_length_is_optimized() && rand() % 100 < pct_length_) {
     // TODO: find available moves from the StructureElement class
     r = statistics::internal::random_int(2) * 2 - 1;
-    se.set_length_key(orig_key_values_[2] - r);
-    std::cout << "length: " << orig_key_values_[2] << " " << r << " " << se.get_length() << std::endl;
+    int new_length = orig_key_values_[2] - r;
+    //std::cout << "length: " << orig_key_values_[2] << " " << se.get_number_of_coordinates() << " " << new_length << std::endl;
+    if ( new_length >= 1 && new_length <= se.get_number_of_coordinates()) {
+      se.set_length_key(new_length);
+    } 
+    
   };
 
   if (se.get_offset_is_optimized() && rand() % 100 < pct_offset_) {
     // TODO: find available moves from the StructureElement class
     r = statistics::internal::random_int(2) * 2 - 1;
-    se.set_offset_key(orig_key_values_[3] - r);
-    std::cout << "offset: " << orig_key_values_[3] << " " << r << " " << se.get_offset() << std::endl;
+    int new_offset = orig_key_values_[3] - r;
+    if ( new_offset >= 0 && new_offset <= se.get_max_offset() ) {
+      se.set_offset_key(new_offset);
+    } 
+    //std::cout << "offset: " << orig_key_values_[3] << " " << r << " " << se.get_offset() << " | " << se.get_max_offset() << std::endl;
   };
 
+  std::cout << orig_key_values_ << " " << se.get_all_key_values() << std::endl;
+
   transform_coordinates();
+
+  //std::cout << " SUCCESS " << std::endl;
+
 
   return IMP::core::MonteCarloMoverResult(h.get_children(), 1.0);
 }
@@ -94,9 +106,11 @@ void StructureElementMover::transform_coordinates(){
   StructureElement se(get_model(), pi_);
   atom::Hierarchy h(get_model(), s_hier_pi_);
   atom::Selection sel(h);
+  //std::cout << "RESINDEX_LIST: " << se.get_resindex_list() << std::endl;
   sel.set_residue_indexes(se.get_resindex_list());
   ParticlesTemp oldsel = sel.get_selected_particles();
   algebra::Vector3Ds new_coords = se.get_coordinates(); // does not take into account polarity!!
+  //std::cout << "NEW_COORDS: " << new_coords << std::endl;
   for (unsigned int i=0; i<se.get_resindex_list().size(); i++) {
     core::XYZ coord(oldsel[i]);
     coord.set_coordinates(new_coords[i]);
@@ -109,11 +123,9 @@ void StructureElementMover::do_reject() {
   StructureElement se(get_model(), pi_);
   zero_coordinates();
   //Return StructureElement key values to their original position
-  std::cout << orig_key_values_ << std::endl;
   se.set_all_keys(orig_key_values_);
   //Return the coordinates of the ThreadingSequence to their original value.
   transform_coordinates();
-
 }
 
 ModelObjectsTemp StructureElementMover::do_get_inputs() const {

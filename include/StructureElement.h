@@ -42,17 +42,15 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
                                 double length = 0, double offset = 0) {
 
     ParticleIndex pi_ = pi;
-    std::cout << "PIx " << pi_ << std::endl;
     m->add_attribute(get_start_res_key(), pi_, start_res);
     IMP_USAGE_CHECK( (polarity == -1 || polarity == 1), "Polarity must be 1 or -1" );
     m->add_attribute(get_polarity_key(), pi_, polarity);
     m->add_attribute(get_length_key(), pi_, length);
     m->add_attribute(get_offset_key(), pi_, offset);
+
   }
 
-
-
-  algebra::Vector3Ds coordinates_;
+  int n_coordinates_;
 
  public:
 
@@ -124,13 +122,12 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     algebra::Vector3Ds coords;
     atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
     //std::cout << "PIx " << pi_ << " " << hs << " " << offset << " " << length << " " << hs <<std::endl;
-    for (unsigned int i=0; i<hs.size(); i++){
+    for (unsigned int i=0; i<get_length(); i++){
       int ix = i + offset;
-      //std::cout << "get_c " << hs[ix] << " " << hs[ix].get_particle_index() << " " << core::XYZ(get_model(), hs[ix].get_particle_index()).get_coordinates() <<std::endl;
+      //std::cout << "GET_COORDS " << i << " " << ix << " " << hs[ix] << " " << hs[ix].get_particle_index() << " " << core::XYZ(get_model(), hs[ix].get_particle_index()).get_coordinates() <<std::endl;
       algebra::Vector3D c=core::XYZ(get_model(), hs[ix].get_particle_index()).get_coordinates();
       coords.push_back(c);
     }
-
     return coords;
   }
 
@@ -220,16 +217,37 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
 
   // Length key cannot be greater than the number of elements in the 
   void set_length_key(float i){ 
-    IMP_USAGE_CHECK( (i < sizeof(coordinates_)), "Length key cannot be greater than number of coordinates in StructureElement");
+    atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
+    n_coordinates_ = hs.size();
+    //std::cout << "set_length_key: " << i << " " << n_coordinates_ << std::endl;
+    IMP_USAGE_CHECK( (i <= n_coordinates_), "Length key cannot be greater than number of coordinates in StructureElement");
     get_particle()->set_value(get_length_key(), i);
   };
 
   // Length plus offset cannot be greater than the number of coordinates
   void set_offset_key(float i) { 
+    atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
+    n_coordinates_ = hs.size();
     //std::cout << "L+soC+i" << " " << i << " + " << get_length() << "=" << i + get_length() << " " << sizeof(coordinates) << std::endl;
-    IMP_USAGE_CHECK( (i + get_length() < sizeof(coordinates_)), "Length plus offset cannot be greater than number of coordinates in StructureElement");
+    IMP_USAGE_CHECK( (i + get_length() <= n_coordinates_), "Length plus offset cannot be greater than number of coordinates in StructureElement");
     get_particle()->set_value(get_offset_key(), i);
   };
+
+  // *********************************************************
+  // Functions for determining available move sets
+
+  int get_max_offset() {
+    // The offset can range from 0 to sizeof(coordinates_) - length
+    atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
+    n_coordinates_ = hs.size();
+    //std::cout << n_coordinates_ << " ||| " << get_length() << std::endl;
+    return n_coordinates_ - get_length();
+  }
+
+  int get_number_of_coordinates() {
+    atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
+    return hs.size();    
+  }
 
 };
 
