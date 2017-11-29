@@ -36,12 +36,15 @@ IMPTHREADING_BEGIN_NAMESPACE
 
 class IMPTHREADINGEXPORT StructureElement : public Decorator {
   ParticleIndex pi_;
+  static const int max_res_ = 50;
 
   static void do_setup_particle(Model *m, ParticleIndex pi,
                                 double start_res = 0, double polarity = 1,
-                                double length = 0, double offset = 0) {
+                                double length = 0, double offset = 0,
+                                int max = 0) {
 
     ParticleIndex pi_ = pi;
+
     m->add_attribute(get_start_res_key(), pi_, start_res);
     IMP_USAGE_CHECK( (polarity == -1 || polarity == 1), "Polarity must be 1 or -1" );
     m->add_attribute(get_polarity_key(), pi_, polarity);
@@ -49,9 +52,7 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     m->add_attribute(get_offset_key(), pi_, offset);
 
   }
-
   int n_coordinates_;
-
  public:
 
   static bool get_is_setup(Model *m, ParticleIndex pi) {
@@ -70,6 +71,10 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
   static FloatKey get_polarity_key();
   static FloatKey get_length_key();
   static FloatKey get_offset_key();
+
+  int get_max_res(){
+    return max_res_;
+  }
 
   // Return all key values in a nice little vector
   Floats get_all_key_values(){
@@ -228,7 +233,7 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
   void set_offset_key(float i) { 
     atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
     n_coordinates_ = hs.size();
-    //std::cout << "L+soC+i" << " " << i << " + " << get_length() << "=" << i + get_length() << " " << sizeof(coordinates) << std::endl;
+    //std::cout << "L+soC+i " << i << " + " << get_length() << "=" << i + get_length() << " " << n_coordinates_ << std::endl;
     IMP_USAGE_CHECK( (i + get_length() <= n_coordinates_), "Length plus offset cannot be greater than number of coordinates in StructureElement");
     get_particle()->set_value(get_offset_key(), i);
   };
