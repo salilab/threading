@@ -42,13 +42,16 @@ IMP::core::MonteCarloMoverResult StructureElementMover::do_propose() {
   orig_key_values_ = se.get_all_key_values();
 
   int r;
-
+  //std::cout << "----------- " << orig_key_values_;
   zero_coordinates();
 
   if (se.get_start_res_is_optimized()) {
     r = statistics::internal::random_int(2) * 2 - 1;
-    se.set_start_res_key(orig_key_values_[0] - r);
-    //std::cout << "start_res: " << orig_key_values_[0] << " " << r << " " << se.get_start_res() << std::endl;
+    int new_start_res = orig_key_values_[0] - r;
+    if ( new_start_res >= 1 && new_start_res + se.get_offset() + se.get_length() < se.get_max_res() ) {
+      se.set_start_res_key(new_start_res);
+    } 
+    //std::cout << "start_res: " << new_start_res << " " << r << " " << se.get_max_res() << std::endl;
   };
 
   if (se.get_polarity_is_optimized() && rand() % 100 < pct_flip_) {
@@ -59,29 +62,27 @@ IMP::core::MonteCarloMoverResult StructureElementMover::do_propose() {
     // TODO: find available moves from the StructureElement class
     r = statistics::internal::random_int(2) * 2 - 1;
     int new_length = orig_key_values_[2] - r;
-    //std::cout << "length: " << orig_key_values_[2] << " " << se.get_number_of_coordinates() << " " << new_length << std::endl;
-    if ( new_length >= 1 && new_length <= se.get_number_of_coordinates()) {
+    //std::cout << "length: " << orig_key_values_[2] << " " << new_length << " | " << se.get_number_of_coordinates() <<  std::endl;    
+    if ( new_length >= 1 && new_length + se.get_offset() <= se.get_number_of_coordinates()) {
       se.set_length_key(new_length);
     } 
-    
   };
 
   if (se.get_offset_is_optimized() && rand() % 100 < pct_offset_) {
     // TODO: find available moves from the StructureElement class
     r = statistics::internal::random_int(2) * 2 - 1;
     int new_offset = orig_key_values_[3] - r;
+    //std::cout << "offset: " << orig_key_values_[3] << " " << new_offset << " | " << se.get_max_offset() << std::endl;
     if ( new_offset >= 0 && new_offset <= se.get_max_offset() ) {
       se.set_offset_key(new_offset);
-    } 
-    //std::cout << "offset: " << orig_key_values_[3] << " " << r << " " << se.get_offset() << " | " << se.get_max_offset() << std::endl;
+    }
   };
 
-  std::cout << orig_key_values_ << " " << se.get_all_key_values() << std::endl;
+  //std::cout << "--------" << orig_key_values_ << " " << se.get_all_key_values() << std::endl;
 
   transform_coordinates();
 
   //std::cout << " SUCCESS " << std::endl;
-
 
   return IMP::core::MonteCarloMoverResult(h.get_children(), 1.0);
 }
@@ -97,6 +98,8 @@ void StructureElementMover::zero_coordinates(){
   for (unsigned int i=0; i<se.get_resindex_list().size(); i++) {
     core::XYZ coord(oldsel[i]);
     coord.set_coordinates(algebra::Vector3D(0,0,0));
+    //Set this as a flag for evaluation or not
+    coord.set_coordinates_are_optimized(false);
   }; 
 
 }
@@ -114,6 +117,8 @@ void StructureElementMover::transform_coordinates(){
   for (unsigned int i=0; i<se.get_resindex_list().size(); i++) {
     core::XYZ coord(oldsel[i]);
     coord.set_coordinates(new_coords[i]);
+    // Set this as a flag for evaluation or not
+    coord.set_coordinates_are_optimized(true);
   }; 
 }
 
