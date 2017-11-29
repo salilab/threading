@@ -4,7 +4,8 @@
 //IMP_SWIG_VALUE_TEMPLATE(IMP::example, ExampleTemplateClassD)
 IMP_SWIG_OBJECT(IMP::threading, StructureElementMover, StructureElementMovers)
 IMP_SWIG_DECORATOR(IMP::threading, StructureElement, StructureElements)
-
+IMP_SWIG_OBJECT(IMP::threading, ConditionalPairRestraint, ConditionalPairRestraints);
 
 %include "IMP/threading/StructureElementMover.h"
 %include "IMP/threading/StructureElement.h"
+%include "IMP/threading/ConditionalPairRestraint.h"
