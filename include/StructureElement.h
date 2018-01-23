@@ -247,13 +247,26 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     n_coordinates_ = hs.size();
     //std::cout << n_coordinates_ << " ||| " << get_length() << std::endl;
     return n_coordinates_ - get_length();
-  }
+  };
 
   int get_number_of_coordinates() {
     atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
     return hs.size();    
-  }
+  };
 
+  int get_last_residue_number(){ return get_start_res() + get_offset(); };
+  int get_first_residue_number(){ return get_start_res(); }
+
+  algebra::Vector3D get_first_coordinate(){
+    atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
+    int i = get_offset();
+    if (get_polarity() == 1){
+    int i = get_offset();
+    algebra::Vector3D c=core::XYZ(get_model(), hs[i].get_particle_index()).get_coordinates();
+    }
+
+  }
+  algebra::Vector3D get_last_coordinate(){}
 };
 
 IMP_DECORATORS(StructureElement, StructureElements, Decorator);

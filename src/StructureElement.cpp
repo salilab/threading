@@ -12,7 +12,7 @@
 #include <IMP/atom/Selection.h>
 #include <IMP/core/XYZ.h>
 #include <IMP/algebra/vector_generators.h>
- 
+
 IMPTHREADING_BEGIN_NAMESPACE
 
 FloatKey StructureElement::get_start_res_key() {
