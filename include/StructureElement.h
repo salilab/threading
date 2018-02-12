@@ -36,12 +36,11 @@ IMPTHREADING_BEGIN_NAMESPACE
 
 class IMPTHREADINGEXPORT StructureElement : public Decorator {
   ParticleIndex pi_;
-  static const int max_res_ = 50;
+  int max_res_=200;
 
   static void do_setup_particle(Model *m, ParticleIndex pi,
                                 double start_res = 0, double polarity = 1,
-                                double length = 0, double offset = 0,
-                                int max = 0) {
+                                double length = 0, double offset = 0) {
 
     ParticleIndex pi_ = pi;
 
@@ -74,6 +73,10 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
 
   int get_max_res(){
     return max_res_;
+  }
+
+  void set_max_res(int max){
+    int max_res_=max;
   }
 
   // Return all key values in a nice little vector
@@ -254,8 +257,8 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     return hs.size();    
   };
 
-  int get_last_residue_number(){ return get_start_res() + get_offset(); };
-  int get_first_residue_number(){ return get_start_res(); }
+  int get_last_residue_number(){ return get_start_res() + get_offset() + get_length() - 1; };
+  int get_first_residue_number(){ return get_start_res() + get_offset() ; }
 
   algebra::Vector3D get_first_coordinate(){
     atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
