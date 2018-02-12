@@ -35,21 +35,19 @@ double StructureElementConnectivityRestraint::unprotected_evaluate(DerivativeAcc
   algebra::Vector3D a_coords = threading::StructureElement(get_model(), a_).get_coordinates().back();
   algebra::Vector3D b_coords = threading::StructureElement(get_model(), b_).get_coordinates().front();
   
-
+  // calculate distance between termini
   float model_distance = IMP::algebra::get_distance(a_coords, b_coords);
+
   // Get number of residues between last residue of SE a_ and SE b_
-
-  // Get resindex lists for each SE
-
   // calculate the # of residues (should have a check to make sure not negative)
   int residues = threading::StructureElement(get_model(), b_).get_first_residue_number() - threading::StructureElement(get_model(), a_).get_last_residue_number();
-
+  //std::cout << "RESIS:" << threading::StructureElement(get_model(), b_).get_first_residue_number() << " " << threading::StructureElement(get_model(), a_).get_last_residue_number() << std::endl;
   float theor_max_dist = residues * dpr_;
 
   double distance = model_distance - theor_max_dist;
 
   double score;
-  if (residues <= 0) {
+  if (residues <= 1) {
     score = 10000;
   } else if (distance <= 0) {
     score = 0;
