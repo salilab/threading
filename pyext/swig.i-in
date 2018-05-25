@@ -5,7 +5,11 @@
 IMP_SWIG_OBJECT(IMP::threading, StructureElementMover, StructureElementMovers)
 IMP_SWIG_DECORATOR(IMP::threading, StructureElement, StructureElements)
 IMP_SWIG_OBJECT(IMP::threading, ConditionalPairRestraint, ConditionalPairRestraints);
+IMP_SWIG_OBJECT(IMP::threading, StructureElementConnectivityRestraint, StructureElementConnectivityRestraints);
+IMP_SWIG_OBJECT(IMP::threading, SecondaryStructureParsimonyRestraint, SecondaryStructureParsimonyRestraints);
 
 %include "IMP/threading/StructureElementMover.h"
 %include "IMP/threading/StructureElement.h"
 %include "IMP/threading/ConditionalPairRestraint.h"
+%include "IMP/threading/StructureElementConnectivityRestraint.h"
+%include "IMP/threading/SecondaryStructureParsimonyRestraint.h"

@@ -124,7 +124,7 @@ void StructureElementMover::transform_coordinates(){
 
 void StructureElementMover::do_reject() {
   IMP_OBJECT_LOG;
-
+  //std::cout << " REJECT!! ";
   StructureElement se(get_model(), pi_);
   zero_coordinates();
   //Return StructureElement key values to their original position
