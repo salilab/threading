@@ -269,7 +269,7 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     }
 
   }
-  algebra::Vector3D get_last_coordinate(){}
+  //algebra::Vector3D get_last_coordinate(){}
 };
 
 IMP_DECORATORS(StructureElement, StructureElements, Decorator);

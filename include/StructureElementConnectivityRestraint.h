@@ -27,7 +27,7 @@ IMPTHREADING_BEGIN_NAMESPACE
 class IMPTHREADINGEXPORT StructureElementConnectivityRestraint : public Restraint {
   ParticleIndex a_;
   ParticleIndex b_;
-  double dpr_; // The distance per residue
+  int n_sds_; // The distance per residue
   IMP::PointerMember<UnaryFunction> score_func_;
   
  public:
@@ -38,7 +38,7 @@ class IMPTHREADINGEXPORT StructureElementConnectivityRestraint : public Restrain
   StructureElementConnectivityRestraint(Model *m, UnaryFunction *score_func,                     
                     ParticleIndex a,
                     ParticleIndex b,
-                    double dpr,
+                    float n_sds,
                     std::string name = "EndToEndRestraint %1%");
 
   double unprotected_evaluate(DerivativeAccumulator *accum) const
@@ -49,31 +49,28 @@ class IMPTHREADINGEXPORT StructureElementConnectivityRestraint : public Restrain
     b_ = b;
   };
 
-  void set_distance_per_residue(float dpr) {
-    dpr_ = dpr;
-  };
+  //void set_distance_per_residue(float dpr) {
+  //  dpr_ = dpr;
+  //};
 
-  int get_number_of_residues() {
-    // Get resindex lists for each SE
-    int residues = threading::StructureElement(get_model(), b_).get_first_residue_number() - threading::StructureElement(get_model(), a_).get_last_residue_number();
-    return residues;
-  };
+  //Currently only works for helices
 
-  float get_max_distance() {
+  ParticleIndex get_pia() { return a_; };
+  ParticleIndex get_pib() { return b_; };
 
-    int residues = get_number_of_residues();
-    return residues * dpr_;
-  };
+  float get_mean_distance_per_residue() const;
 
-  float get_model_distance() {
-    // Get the coordinates of the first and last residues for a_ and b_
-    algebra::Vector3D a_coords = threading::StructureElement(get_model(), a_).get_coordinates().back();
-    algebra::Vector3D b_coords = threading::StructureElement(get_model(), b_).get_coordinates().front();
-    
-    float model_distance = IMP::algebra::get_distance(a_coords, b_coords);
+  float get_sd_distance_per_residue() const;
 
-    return model_distance;
-  };
+  int get_number_of_residues() const;
+
+  float get_mean_distance() const;
+
+  float get_max_distance() const;
+
+  float get_model_distance() const;
+
+
 
   ModelObjectsTemp do_get_inputs() const;
   IMP_OBJECT_METHODS(StructureElementConnectivityRestraint);

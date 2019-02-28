@@ -25,7 +25,7 @@ IMPTHREADING_BEGIN_NAMESPACE
 
 class IMPTHREADINGEXPORT StructureElementMover : public IMP::core::MonteCarloMover {
   ParticleIndex pi_;
-  ParticleIndex s_hier_pi_; // structural root hierarchy node (for right now, just a single chain)
+  ParticleIndex s_hier_pi_; // sequence root hierarchy node particle index (for right now, just a single chain)
   Floats orig_key_values_;
   int pct_flip_ = 0; // percentage of time to try a polarity flip move
   int pct_offset_ = 30; // percentage of time to try an offset move

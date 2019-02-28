@@ -15,6 +15,8 @@
 
 #include <IMP/threading/threading_config.h>
 #include <IMP/Restraint.h>
+#include <IMP/base_types.h>
+#include <IMP/exception.h>
 #include <IMP/UnaryFunction.h>
 
 IMPTHREADING_BEGIN_NAMESPACE
@@ -30,7 +32,7 @@ IMPTHREADING_BEGIN_NAMESPACE
 class IMPTHREADINGEXPORT ConditionalPairRestraint : public Restraint {
   ParticleIndex a_;
   ParticleIndex b_;
-  double c_;
+  double dpr_;
   IMP::PointerMember<UnaryFunction> score_func_;
 
  public:
@@ -41,11 +43,14 @@ class IMPTHREADINGEXPORT ConditionalPairRestraint : public Restraint {
   ConditionalPairRestraint(Model *m, UnaryFunction *score_func,                     
                     ParticleIndex a,
                     ParticleIndex b,
-                    double c,
+                    double dpr,
                     std::string name = "ConditionalPairRestraint %1%");
 
+
+  Particles get_closest_built_residue_particles(ParticleIndex pi) const;
   double unprotected_evaluate(DerivativeAccumulator *accum) const
       IMP_OVERRIDE;
+
   ModelObjectsTemp do_get_inputs() const;
   IMP_OBJECT_METHODS(ConditionalPairRestraint);
 };
