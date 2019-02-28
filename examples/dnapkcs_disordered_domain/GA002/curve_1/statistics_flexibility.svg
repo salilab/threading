@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="346" height="361">
+<rect width="346" height="361" style="fill:white"/>
+<circle cx="195.05" cy="160.29" r="100" style="fill:olivedrab;fill-opacity:0.0;stroke:olivedrab;stroke-width:2;" />
+<circle cx="195.05" cy="160.29" r=" 20.00" style="fill:olivedrab;fill-opacity:1.0" stroke-width="2" fill="olivedrab"/>
+ <polygon points="195.05, 79.61 172.54,152.97 142.65,232.41 251.69,238.24 271.16,135.56  " style="fill:darkblue;fill-opacity:0.5;stroke:darkblue;stroke-width:1;" />
+ <polygon points="195.05, 50.00  50.00,113.16 137.74,239.17 253.96,241.36 291.24,129.03  " style="fill:darkorange;fill-opacity:0.3;stroke:darkorange;stroke-width:1;" />
+<line x1="195.05" y1="160.29" x2="142.65" y2="232.41" style="stroke:blue;stroke-width:1;stroke-dasharray:2,2" />
+<line x1="195.05" y1="160.29" x2="137.74" y2="239.17" style="stroke:cyan;stroke-width:1;stroke-dasharray:2,2" />
+<text x="195.05" y=" 79.61" fill="black" transform="rotate(360 195.05, 79.61)">1</text>
+<text x="172.54" y="152.97" fill="black" transform="rotate(288 172.54,152.97)">2</text>
+<text x="142.65" y="232.41" fill="black" transform="rotate(216 142.65,232.41)">3</text>
+<text x="251.69" y="238.24" fill="black" transform="rotate(144 251.69,238.24)">4</text>
+<text x="271.16" y="135.56" fill="black" transform="rotate( 72 271.16,135.56)">5</text>
+<text x=" 20" y="281" fill="black">Preferred Arrangement:            centered</text>
+<text x=" 20" y="291" fill="black"> <tspan style="fill:black">Rflex(random)/Rsigma: </tspan> <tspan style="fill:darkorange">~ 88.4%</tspan> <tspan style="fill:black"> (</tspan> <tspan style="fill:darkblue">~ 87.7%</tspan> <tspan style="fill:black">)/6.44</tspan></text>
+<text x=" 20" y="311" fill="black">(1) Mean Abs. Deviation: <tspan style="fill:darkorange">  2.40</tspan> <tspan style="fill:black">/</tspan>  <tspan style="fill:darkblue">  0.27</tspan></text>
+<text x=" 20" y="321" fill="black">(2) St. Deviation: <tspan style="fill:darkorange">  2.73</tspan> <tspan style="fill:black">/</tspan>  <tspan style="fill:darkblue">  0.42</tspan></text>
+<text x=" 20" y="331" fill="black">(3) Geometric Average: <tspan style="fill:darkorange"> 15.93</tspan> <tspan style="fill:black">/</tspan>  <tspan style="fill:darkblue"> 14.56</tspan></text>
+<text x=" 20" y="341" fill="black">(4) Skewness: <tspan style="fill:darkorange"> -0.22</tspan> <tspan style="fill:black">/</tspan>  <tspan style="fill:darkblue">  3.65</tspan></text>
+<text x=" 20" y="351" fill="black">(5) Curtosis: <tspan style="fill:darkorange"> -1.14</tspan> <tspan style="fill:black">/</tspan>  <tspan style="fill:darkblue"> 19.97</tspan></text>
+ </svg>
