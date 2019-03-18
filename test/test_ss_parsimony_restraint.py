@@ -4,6 +4,7 @@ import IMP.pmi.tools
 import IMP.atom
 import IMP.core
 import IMP.threading
+import os
 
 def sort_ses(ses):
     # Given a list of structural elements, sort them by increasing first residue
@@ -111,7 +112,8 @@ psipred_slope = 0.1
 
 m = IMP.Model()
 ######################################
-pdbfile = "./data/2lv9.pdb"
+DATADIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'input'))
+pdbfile = os.path.join(DATADIR, "pdb2lv9.ent")
 root_hier = IMP.atom.read_pdb(pdbfile, m)
 #IMP.atom.show_molecular_hierarchy(root_hier)
 
