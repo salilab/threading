@@ -28,7 +28,7 @@ class Tests(IMP.test.TestCase):
         m = IMP.Model()
         p = IMP.Particle(m)
         se = IMP.threading.StructureElement(p, coords)
-        print se.get_polarity(), se.length(), se.get_coordinates()
+        print(se.get_polarity(), se.length(), se.get_coordinates())
 
     def test_flip_polarity_key(self):
         m = IMP.Model()
