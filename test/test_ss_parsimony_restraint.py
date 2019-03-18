@@ -1,3 +1,4 @@
+from __future__ import print_function
 import IMP
 import numpy
 import IMP.pmi.tools
@@ -9,7 +10,7 @@ import os
 def sort_ses(ses):
     # Given a list of structural elements, sort them by increasing first residue
     res = sorted([(s.get_first_residue_number(), s) for s in ses], key=lambda x: x[0])
-    #print res
+    #print(res)
     return [x[1] for x in res]
 
 def setup_structural_element(root_hier, element, max_translation=1):
@@ -35,9 +36,9 @@ def setup_structural_element(root_hier, element, max_translation=1):
         #m = IMP.atom.Mass.setup_particle(root_hier.get_model(), np)
         xyz.set_coordinates(IMP.core.XYZ(p).get_coordinates())
         h.add_child(hp)
-        #print IMP.core.XYZ(p).get_coordinates() 
+        #print(IMP.core.XYZ(p).get_coordinates())
 
-    #print xyz
+    #print(xyz)
 
     IMP.threading.StructureElement.setup_particle(root_hier.get_model(), pi.get_index(), element[0]-4, 1, element[1], 0)
     #se = se.setup_particle(p, element[0], 1, element[1], 0)
@@ -48,9 +49,9 @@ def setup_structural_element(root_hier, element, max_translation=1):
     se = IMP.threading.StructureElement(pi)
     se.set_keys_are_optimized(True)
 
-    print se.get_max_res()
+    print(se.get_max_res())
 
-    #print "XXXxx", IMP.core.XYZ(root_hier.get_model(), h.get_children()[0].get_particle_index()), h.get_children()
+    #print("XXXxx", IMP.core.XYZ(root_hier.get_model(), h.get_children()[0].get_particle_index()), h.get_children())
     return se
 
 def setup_conditional_pair_restraint(p1, p2, length, constant):
@@ -73,7 +74,7 @@ def setup_length_restraint(s):
     uf = IMP.core.Linear(s.get_number_of_coordinates(), -1*length_slope)
     sf = IMP.core.AttributeSingletonScore(uf, IMP.FloatKey("length"))
     r = IMP.core.SingletonRestraint(m, sf, s.get_particle())
-    print "SSR", r
+    print("SSR", r)
     return r
 
 def add_SECR(p1, p2, slope=1, dpr=3.4):

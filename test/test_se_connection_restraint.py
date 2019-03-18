@@ -1,3 +1,4 @@
+from __future__ import print_function
 import IMP
 import numpy
 import IMP.pmi.tools
@@ -9,7 +10,7 @@ import os
 def sort_ses(ses):
     # Given a list of structural elements, sort them by increasing first residue
     res = sorted([(s.get_first_residue_number(), s) for s in ses], key=lambda x: x[0])
-    #print res
+    #print(res)
     return [x[1] for x in res]
 
 def setup_structural_element(root_hier, element, max_translation=1):
@@ -35,9 +36,9 @@ def setup_structural_element(root_hier, element, max_translation=1):
         #m = IMP.atom.Mass.setup_particle(root_hier.get_model(), np)
         xyz.set_coordinates(IMP.core.XYZ(p).get_coordinates())
         h.add_child(hp)
-        #print IMP.core.XYZ(p).get_coordinates() 
+        #print(IMP.core.XYZ(p).get_coordinates())
 
-    #print xyz
+    #print(xyz)
 
     IMP.threading.StructureElement.setup_particle(root_hier.get_model(), pi.get_index(), element[0]-4, 1, element[1], 0)
     #se = se.setup_particle(p, element[0], 1, element[1], 0)
@@ -48,9 +49,9 @@ def setup_structural_element(root_hier, element, max_translation=1):
     se = IMP.threading.StructureElement(pi)
     se.set_keys_are_optimized(True)
 
-    print se.get_max_res()
+    print(se.get_max_res())
 
-    #print "XXXxx", IMP.core.XYZ(root_hier.get_model(), h.get_children()[0].get_particle_index()), h.get_children()
+    #print("XXXxx", IMP.core.XYZ(root_hier.get_model(), h.get_children()[0].get_particle_index()), h.get_children())
     return se
 
 def setup_conditional_pair_restraint(p1, p2, length, constant):
@@ -73,7 +74,7 @@ def setup_length_restraint(s):
     uf = IMP.core.Linear(s.get_number_of_coordinates(), -1*length_slope)
     sf = IMP.core.AttributeSingletonScore(uf, IMP.FloatKey("length"))
     r = IMP.core.SingletonRestraint(m, sf, s.get_particle())
-    print "SSR", r
+    print("SSR", r)
     return r
 
 def add_SECR(p1, p2, slope=1, dpr=3.4):
@@ -160,7 +161,7 @@ for xl in xls:
     p2 = IMP.atom.Selection(root_hier, chain_id='S', residue_index=xl[1]).get_selected_particle_indexes()[0]
 
     r = setup_conditional_pair_restraint(p1, p2, xl[2], xl_constant)
-    print "XL Setup between residues: ", xl[0], xl[1], " at a length of ", xl[2]
+    print("XL Setup between residues: ", xl[0], xl[1], " at a length of ", xl[2])
     rests.append(r)
 
 # Completeness Restraint
@@ -203,22 +204,22 @@ for s in Se_pos:
 se_rests = []
 se_pairs = []
 for i in range(len(se)-1):
-    print "RESIS: ", se[i].get_last_residue_number(), se[i+1].get_first_residue_number()
+    print("RESIS: ", se[i].get_last_residue_number(), se[i+1].get_first_residue_number())
     se_pairs.append((se[i].get_particle_index(), se[i+1].get_particle_index()))
 
 for s in se_pairs:
     r = add_SECR(s[0], s[1])
-    print s, "NRES:", r.get_number_of_residues(), r.get_model_distance(), r.get_max_distance(), r.unprotected_evaluate(None)
+    print(s, "NRES:", r.get_number_of_residues(), r.get_model_distance(), r.get_max_distance(), r.unprotected_evaluate(None))
     rests.append(r)
     se_rests.append(r)
 
-print [r.unprotected_evaluate(None) for r in se_rests]
+print([r.unprotected_evaluate(None) for r in se_rests])
 
 
 for i in range(22):
     se[0].set_start_res_key(se[0].get_start_res()+1)
     r = se_rests[0]
-    print "SECR:", se[0].get_start_res(), se[1].get_start_res(), r.get_number_of_residues(), r.get_model_distance(), r.get_max_distance(), r.unprotected_evaluate(None)
+    print("SECR:", se[0].get_start_res(), se[1].get_start_res(), r.get_number_of_residues(), r.get_model_distance(), r.get_max_distance(), r.unprotected_evaluate(None))
 
 
 
