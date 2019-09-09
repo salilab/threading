@@ -4,6 +4,7 @@
 //IMP_SWIG_VALUE_TEMPLATE(IMP::example, ExampleTemplateClassD)
 IMP_SWIG_OBJECT(IMP::threading, StructureElementMover, StructureElementMovers)
 IMP_SWIG_DECORATOR(IMP::threading, StructureElement, StructureElements)
+IMP_SWIG_DECORATOR(IMP::threading, StructureElementMolecule, StructureElementMolecules)
 IMP_SWIG_OBJECT(IMP::threading, ConditionalPairRestraint, ConditionalPairRestraints);
 IMP_SWIG_OBJECT(IMP::threading, LoopPairDistanceRestraint, LoopPairDistanceRestraints);
 IMP_SWIG_OBJECT(IMP::threading, StructureElementConnectivityRestraint, StructureElementConnectivityRestraints);
@@ -11,6 +12,7 @@ IMP_SWIG_OBJECT(IMP::threading, SecondaryStructureParsimonyRestraint, SecondaryS
 
 %include "IMP/threading/StructureElementMover.h"
 %include "IMP/threading/StructureElement.h"
+%include "IMP/threading/StructureElementMolecule.h"
 %include "IMP/threading/ConditionalPairRestraint.h"
 %include "IMP/threading/LoopPairDistanceRestraint.h"
 %include "IMP/threading/StructureElementConnectivityRestraint.h"

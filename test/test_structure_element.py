@@ -13,10 +13,19 @@ import io
 class Tests(IMP.test.TestCase):
 
     def setup_structure_element(self, p, start_res, polarity, length, offset, nres=10):
+        model = p.get_model()
         IMP.threading.StructureElement.setup_particle(p, start_res, polarity, length, offset)
+        h = IMP.atom.Hierarchy.setup_particle(p)
         se = IMP.threading.StructureElement(p) 
 
-        se.set_coordinates(self.make_coordinates(nres))
+        for c in self.make_coordinates(nres):
+            np = IMP.Particle(model)
+            hp = IMP.atom.Hierarchy.setup_particle(np)
+            xyz = IMP.core.XYZR.setup_particle(np)
+            xyz.set_coordinates(c)
+            IMP.atom.Mass.setup_particle(np, 1.0)
+            h.add_child(hp)
+        
         return se   
 
     def make_coordinates(self, ncoord=3):
