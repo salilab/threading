@@ -30,13 +30,12 @@ IMPTHREADING_BEGIN_NAMESPACE
     "start_res" : >=1    :: the starting residue of the sequence it is assigned to
     "polarity"  : (1;-1) :: the direction at which the sequence is assigned (+1 for forward, -1 for reverse)
     "length"    : (0,N)  :: the number of residues with which to assign to the sequence
-    "offset"    : (0,N-1):: the foffset from the first residue of the Fragment 
-        (i.e. offset = 2; polarity = 1; Fragment residue 3 is assigned to "start_res")
+    "offset"    : (0,N-1):: the offset from the first residue of the Fragment 
+       (i.e. offset = 2; polarity = 1; Fragment residue 3 is assigned to "start_res")
  */
 
 class IMPTHREADINGEXPORT StructureElement : public Decorator {
   ParticleIndex pi_;
-  int max_res_=200;
 
   static void do_setup_particle(Model *m, ParticleIndex pi,
                                 double start_res = 0, double polarity = 1,
@@ -49,7 +48,7 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     m->add_attribute(get_polarity_key(), pi_, polarity);
     m->add_attribute(get_length_key(), pi_, length);
     m->add_attribute(get_offset_key(), pi_, offset);
-
+  
   }
   int n_coordinates_;
  public:
@@ -70,14 +69,6 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
   static FloatKey get_polarity_key();
   static FloatKey get_length_key();
   static FloatKey get_offset_key();
-
-  int get_max_res(){
-    return max_res_;
-  }
-
-  void set_max_res(int max){
-    int max_res_=max;
-  }
 
   // Return all key values in a nice little vector
   Floats get_all_key_values(){
@@ -130,7 +121,7 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     algebra::Vector3Ds coords;
     atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
     //std::cout << "PIx " << pi_ << " " << hs << " " << offset << " " << length << " " << hs <<std::endl;
-    for (unsigned int i=0; i<get_length(); i++){
+    for (int i=0; i<length; i++){
       int ix = i + offset;
       //std::cout << "GET_COORDS " << i << " " << ix << " " << hs[ix] << " " << hs[ix].get_particle_index() << " " << core::XYZ(get_model(), hs[ix].get_particle_index()).get_coordinates() <<std::endl;
       algebra::Vector3D c=core::XYZ(get_model(), hs[ix].get_particle_index()).get_coordinates();
@@ -163,18 +154,18 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
   void set_offset_is_optimized(bool tf) const {
     get_particle()->set_is_optimized(get_offset_key(), tf);
   }
-
+  
   bool get_start_res_is_optimized() {
-    get_particle()->get_is_optimized(get_start_res_key());
+    return get_particle()->get_is_optimized(get_start_res_key());
   }
   bool get_polarity_is_optimized() {
-    get_particle()->get_is_optimized(get_polarity_key());
+    return get_particle()->get_is_optimized(get_polarity_key());
   }
   bool get_length_is_optimized() {
-    get_particle()->get_is_optimized(get_length_key());
+    return get_particle()->get_is_optimized(get_length_key());
   }
   bool get_offset_is_optimized() {
-    get_particle()->get_is_optimized(get_offset_key());
+    return get_particle()->get_is_optimized(get_offset_key());
   }
 
   // Get the list of residue indexes that these
@@ -185,11 +176,11 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     // The polarity key determines whether we build the
     // residue list forwards or backwards
     if (get_polarity() == 1){
-      for (unsigned int i=0; i<length; i++){
+      for (int i=0; i<length; i++){
         resindex_transform.push_back(i + get_start_res());
       }
     } else {
-      for (unsigned int i=length; i>0; i--){
+      for (int i=length; i>0; i--){
         resindex_transform.push_back(i + get_start_res()-1);
       }      
     }
@@ -204,7 +195,7 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     set_start_res_key(vals[0]);
     set_polarity_key(vals[1]);
     set_length_key(vals[2]);
-    set_offset_key(vals[3]); 
+    set_offset_key(vals[3]);
   }
 
   // start_res_key can be anything in the structure
@@ -264,11 +255,13 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
     int i = get_offset();
     if (get_polarity() == 1){
-    int i = get_offset();
     algebra::Vector3D c=core::XYZ(get_model(), hs[i].get_particle_index()).get_coordinates();
+    } else {
+    int j = get_length();
+    algebra::Vector3D c=core::XYZ(get_model(), hs[i+j].get_particle_index()).get_coordinates();    
     }
-
   }
+
   //algebra::Vector3D get_last_coordinate(){}
 };
 
