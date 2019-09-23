@@ -14,6 +14,7 @@ benchmark/CMakeLists.txt
 bin/CMakeLists.txt
 dependency/CMakeLists.txt
 examples/CMakeLists.txt
+examples/dnapkcs_disordered_domain
 pyext/CMakeLists.txt
 utility/CMakeLists.txt
 */Files.cmake
