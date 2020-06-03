@@ -6,7 +6,7 @@
  *  \get_is_optimized() = True. Otherwise a constant
  *  \value is returned
  *
- *  Copyright 2007-2017 IMP Inventors. All rights reserved.
+ *  Copyright 2007-2020 IMP Inventors. All rights reserved.
  *
  */
 
@@ -49,10 +49,6 @@ class IMPTHREADINGEXPORT StructureElementConnectivityRestraint : public Restrain
     b_ = b;
   };
 
-  //void set_distance_per_residue(float dpr) {
-  //  dpr_ = dpr;
-  //};
-
   //Currently only works for helices
 
   ParticleIndex get_pia() { return a_; };
@@ -69,8 +65,6 @@ class IMPTHREADINGEXPORT StructureElementConnectivityRestraint : public Restrain
   float get_max_distance() const;
 
   float get_model_distance() const;
-
-
 
   ModelObjectsTemp do_get_inputs() const;
   IMP_OBJECT_METHODS(StructureElementConnectivityRestraint);

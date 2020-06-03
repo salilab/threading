@@ -52,14 +52,14 @@ float StructureElementConnectivityRestraint::get_mean_distance() const{
 float StructureElementConnectivityRestraint::get_max_distance() const {
   float meandist = get_mean_distance();
   float sddist = get_sd_distance_per_residue();
-  //std::cout << " > " << meandist << " " << sddist << std::endl;
   return meandist + sddist * n_sds_;
 };
 
 float StructureElementConnectivityRestraint::get_model_distance() const {
-  // Get the coordinates of the first and last residues for a_ and b_
+  // Get the coordinates of the last and first residues for a_ and b_
   algebra::Vector3D a_coords = threading::StructureElement(get_model(), a_).get_coordinates().back();
   algebra::Vector3D b_coords = threading::StructureElement(get_model(), b_).get_coordinates().front();
+  // Compute and return the distance
   float model_distance = IMP::algebra::get_distance(a_coords, b_coords);
   return model_distance;
 };
@@ -79,23 +79,26 @@ double StructureElementConnectivityRestraint::unprotected_evaluate(DerivativeAcc
   //IMP_CHECK_OBJECT(b_.get());
   IMP_CHECK_OBJECT(score_func_);
   IMP_OBJECT_LOG;
-
-  // Get the coordinates of the first and last residues for a_ and b_
-  //algebra::Vector3D a_coords = threading::StructureElement(get_model(), a_).get_coordinates().back();
-  //algebra::Vector3D b_coords = threading::StructureElement(get_model(), b_).get_coordinates().front();
   
-  // calculate distance between termini
-  //float model_distance = get_model_distance(); //IMP::algebra::get_distance(a_coords, b_coords);
+  // If particle a_ is not set up as StructureElements, this is a dummy restraint that evaluates to zero
+  if(threading::StructureElement().get_is_setup(get_model(), a_)==false){
+	  return 0.0;
+  }
 
-  // Get number of residues between last residue of SE a_ and SE b_
-  // calculate the # of residues (should have a check to make sure not negative)
-  //int residues = get_number_of_residues(); //threading::StructureElement(get_model(), b_).get_first_residue_number() - threading::StructureElement(get_model(), a_).get_last_residue_number();
-  //std::cout << "RESIS:" << threading::StructureElement(get_model(), b_).get_first_residue_number() << " " << threading::StructureElement(get_model(), a_).get_last_residue_number() << std::endl;
-  //float theor_max_dist = get_max_distance();
-
-  double distance = get_model_distance() - get_max_distance();
-
+  // Compute distance between C-term of SE a_ and N-term of SE b_
+  double mod_dist = get_model_distance();
+  
+  // Compute "max" distance per restraint
+  double max_dist = get_max_distance();
+  
+  // Evaluate the difference between our distance and max distance
+  double distance = mod_dist - max_dist;
+  
   double score;
+
+  // If the number of residues is less than zero, then we have overlap between SEs.
+  // This should not happen in practice, but if checks are not implemented at the system
+  // level, an overlap will return a score of 10000
   if (get_number_of_residues() <= 1) {
     score = 10000;
   } else if (distance <= 0) {
@@ -103,7 +106,7 @@ double StructureElementConnectivityRestraint::unprotected_evaluate(DerivativeAcc
   } else {
     score = score_func_->evaluate(distance);
   }
-  //std::cout << "Connectivity: " << get_name() << score << " " << get_number_of_residues() << " | " << threading::StructureElement(get_model(), b_).get_first_residue_number() << " " << threading::StructureElement(get_model(), a_).get_last_residue_number() << std::endl;
+  
   return score;
 }
 
