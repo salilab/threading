@@ -253,13 +253,15 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
 
   algebra::Vector3D get_first_coordinate(){
     atom::Hierarchies hs=atom::Hierarchy(get_particle()).get_children();
+    algebra::Vector3D c;
     int i = get_offset();
     if (get_polarity() == 1){
-    algebra::Vector3D c=core::XYZ(get_model(), hs[i].get_particle_index()).get_coordinates();
+    c=core::XYZ(get_model(), hs[i].get_particle_index()).get_coordinates();
     } else {
     int j = get_length();
-    algebra::Vector3D c=core::XYZ(get_model(), hs[i+j].get_particle_index()).get_coordinates();    
+    c=core::XYZ(get_model(), hs[i+j].get_particle_index()).get_coordinates();    
     }
+    return c;
   }
 
   //algebra::Vector3D get_last_coordinate(){}
