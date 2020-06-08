@@ -68,9 +68,11 @@ ParticleIndexes LoopPairDistanceRestraint::get_sequence_residue_particles() cons
 Particles LoopPairDistanceRestraint::get_closest_built_residue_particles(ParticleIndex pi) const
 {
   // TODO: Ensure that input particle is a residue
-  // create vector for the endpoint particles
+  
   ParticlesTemp endpoints;
   atom::Residue r = atom::Residue(get_model(), pi);
+  atom::Hierarchy nextres;
+  atom::Hierarchy prevres;
   int ri = r.get_index();
   
   // Get the chain of this residue
@@ -80,29 +82,31 @@ Particles LoopPairDistanceRestraint::get_closest_built_residue_particles(Particl
   // Go forward in sequence space looking for a coordinate that is optimized (max = 1000)
   // This is very slow, especially for sparsely built models  and should be optimized
   for (unsigned int i=1; i<1000; i++){
-    atom::Selection sel(seq_chain);
-    sel.set_residue_index(ri + i);
-    ParticlesTemp nextres = sel.get_selected_particles();
+    // Get the next residue particle
+    nextres = atom::get_next_residue(r);
+    
     // If you hit the end of the chain, then just leave
-    if (nextres.size() == 0){ break;}
-    if (core::XYZ(nextres[0]).get_coordinates_are_optimized()){
-      endpoints.push_back(nextres[0]);
+    if (nextres.get_particle()==0){ break;}
+    if (core::XYZ(nextres.get_particle()).get_coordinates_are_optimized()){
+      endpoints.push_back(nextres.get_particle());
       break;
-    } 
+    }
+    r = atom::Residue(nextres.get_particle()); 
   }
-
+  
+  r = atom::Residue(get_model(), pi);
   // Go backward in sequence space looking for a coordinate that is optimized
   for (int i=-1; i>-1000; i--){
-    atom::Selection sel(seq_chain);
-    sel.set_residue_index(ri + i);
-    ParticlesTemp nextres = sel.get_selected_particles();
+    // Get the previous residue
+    prevres = atom::get_previous_residue(r);
+    
     // If you hit the end of the chain, then just leave
-    if (nextres.size() == 0){ break;}
-    if (core::XYZ(nextres[0]).get_coordinates_are_optimized()){
-      endpoints.push_back(nextres[0]);
-      //std::cout << " " << ri+i << std::endl;   
+    if (prevres.get_particle()==0){ break;}
+    if (core::XYZ(prevres.get_particle()).get_coordinates_are_optimized()){
+      endpoints.push_back(prevres.get_particle());
       break;
     } 
+    r = atom::Residue(prevres.get_particle());
   }
   return endpoints;
 }
@@ -164,6 +168,7 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
   float new_dist;
 
   // If both residues are structured, computing the model distance is easy
+  
   if (a_opt==true and b_opt==true) {
     distance = core::get_distance(core::XYZ(get_model(), a_), core::XYZ(get_model(), b_));
   
@@ -327,7 +332,10 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
 /* Return all particles whose attributes are read by the restraints. To
    do this, ask the pair score what particles it uses.*/
 ModelObjectsTemp LoopPairDistanceRestraint::do_get_inputs() const {
-  return ModelObjectsTemp(1, get_model()->get_particle(a_));
+  ModelObjectsTemp ret;
+  ret.push_back(get_model()->get_particle(a_));
+  ret.push_back(get_model()->get_particle(b_));
+  return ret; //ModelObjectsTemp(1, get_model()->get_particle(a_));
 }
 
 IMPTHREADING_END_NAMESPACE
