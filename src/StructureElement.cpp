@@ -31,7 +31,10 @@ FloatKey StructureElement::get_offset_key() {
   static FloatKey k("offset");
   return k;
 }
-
+StringKey StructureElement::get_chain_key() {
+  StringKey k("chain_id");
+  return k;
+}
 
 void StructureElement::show(std::ostream &out) const {
   out << get_offset_key();

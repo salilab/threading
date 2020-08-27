@@ -49,7 +49,6 @@ IMP::core::MonteCarloMoverResult StructureElementMover::do_propose() {
     r = statistics::internal::random_int(2) * 2 - 1;
     int new_start_res = orig_key_values_[0] - r;
     se.set_start_res_key(new_start_res);
-    //std::cout << "start_res: " << new_start_res << " " << r << " " << se.get_max_res() << std::endl;
   };
 
   // Propose move to polarity
@@ -89,7 +88,7 @@ void StructureElementMover::zero_coordinates(){
   atom::Selection sel(h);
   sel.set_residue_indexes(se.get_resindex_list());
   ParticlesTemp oldsel = sel.get_selected_particles();
-  for (unsigned int i=0; i<se.get_resindex_list().size(); i++) {
+  for (unsigned int i=0; i<sel.get_selected_particles().size(); i++) {
     core::XYZ coord(oldsel[i]);
     coord.set_coordinates(algebra::Vector3D(0,0,0));
     //Set this as a flag for evaluation or not

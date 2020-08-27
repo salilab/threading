@@ -41,11 +41,14 @@ float StructureElementConnectivityRestraint::get_sd_distance_per_residue() const
 
 int StructureElementConnectivityRestraint::get_number_of_residues()  const{
   int residues = threading::StructureElement(get_model(), b_).get_first_residue_number() - threading::StructureElement(get_model(), a_).get_last_residue_number();
+
   return residues;
 };
 
 float StructureElementConnectivityRestraint::get_mean_distance() const{
   int residues = get_number_of_residues();
+  //std::cout<<"n_residues "<< residues<<" "<<get_mean_distance_per_residue()<<" "<<residues * get_mean_distance_per_residue()<<std::endl;
+  
   return residues * get_mean_distance_per_residue();
 };
 
@@ -57,16 +60,36 @@ float StructureElementConnectivityRestraint::get_max_distance() const {
 
 float StructureElementConnectivityRestraint::get_model_distance() const {
   // Get the coordinates of the last and first residues for a_ and b_
-  algebra::Vector3D a_coords = threading::StructureElement(get_model(), a_).get_coordinates().back();
-  algebra::Vector3D b_coords = threading::StructureElement(get_model(), b_).get_coordinates().front();
+
+  float model_distance;
+  
+  std::string chain_1 = threading::StructureElement(get_model(), a_).get_chain();
+  std::string chain_2 = threading::StructureElement(get_model(), b_).get_chain();  
+  
   // Compute and return the distance
-  float model_distance = IMP::algebra::get_distance(a_coords, b_coords);
+  if (chain_1 == chain_2){
+     int ra_i = threading::StructureElement(get_model(),a_).get_start_res();
+     int rb_i = threading::StructureElement(get_model(),b_).get_start_res();
+     algebra::Vector3D a_coords = threading::StructureElement(get_model(), a_).get_coordinates().back();
+     algebra::Vector3D b_coords = threading::StructureElement(get_model(), b_).get_coordinates().front();
+     //std::cout<<ra_i<<" a_coords "<<a_coords<<std::endl;
+     //std::cout<<rb_i<<"b_coords "<<b_coords<<std::endl;
+    
+     model_distance = IMP::algebra::get_distance(a_coords, b_coords);
+     //std::cout<<"model_distance "<<model_distance<<std::endl;
+  }
+  else {
+    model_distance = 0;
+  }
+  //std::cout<<"CHAINS "<<chain_1<<" "<<chain_2<<std::endl;
+  
   return model_distance;
 };
 
 
 float StructureElementConnectivityRestraint::get_mean_distance_per_residue() const {
   int nres = get_number_of_residues();
+ 
   float mean;
   if (nres > 29) { mean = nhh_means_[29];
   } else { mean = nhh_means_[nres];};
@@ -79,11 +102,12 @@ double StructureElementConnectivityRestraint::unprotected_evaluate(DerivativeAcc
   //IMP_CHECK_OBJECT(b_.get());
   IMP_CHECK_OBJECT(score_func_);
   IMP_OBJECT_LOG;
-  
+
   // If particle a_ is not set up as StructureElements, this is a dummy restraint that evaluates to zero
   if(threading::StructureElement().get_is_setup(get_model(), a_)==false){
 	  return 0.0;
   }
+
 
   // Compute distance between C-term of SE a_ and N-term of SE b_
   double mod_dist = get_model_distance();
@@ -93,6 +117,8 @@ double StructureElementConnectivityRestraint::unprotected_evaluate(DerivativeAcc
   
   // Evaluate the difference between our distance and max distance
   double distance = mod_dist - max_dist;
+
+  //std::cout<<"model distance "<<mod_dist<<" max distance "<<max_dist<<std::endl;
   
   double score;
 

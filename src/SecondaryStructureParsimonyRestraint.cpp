@@ -12,6 +12,7 @@
 #include <IMP/threading/StructureElement.h>
 #include <IMP/atom/SecondaryStructureResidue.h>
 #include <math.h>
+#include <boost/algorithm/string.hpp>
 
 IMPTHREADING_BEGIN_NAMESPACE
 
@@ -31,7 +32,8 @@ double SecondaryStructureParsimonyRestraint::unprotected_evaluate(DerivativeAccu
 
   // Ge the number of residues
   int nres = atom::Hierarchy(get_model(), b_).get_children().size();
-
+  std::string prot_chain = atom::Hierarchy(get_model(), b_)->get_name();
+  
   IMP_OBJECT_LOG;
 
 
@@ -43,16 +45,22 @@ double SecondaryStructureParsimonyRestraint::unprotected_evaluate(DerivativeAccu
 
   // Populate the SE sec st array with covered SE residues
   for (int nse = 0; nse < ses_.size(); nse++){
-    // First, get the residue indexes for this SE.
-    Ints resinds = threading::StructureElement(get_model(), ses_[nse]).get_resindex_list();
-    // Second, get the probabilities for this SE
-    Floats ses_ss_prob = atom::SecondaryStructureResidue(get_model(), ses_[nse]).get_all_probabilities();
 
-    for(int i = 0; i < resinds.size(); i++){
+    // Get chain
+    std::string chain = threading::StructureElement(get_model(),ses_[nse]).get_chain();
+    if (boost::algorithm::contains(chain, prot_chain)) {
+    
+        // First, get the residue indexes for this SE.
+        Ints resinds = threading::StructureElement(get_model(), ses_[nse]).get_resindex_list();
+        // Second, get the probabilities for this SE
+        Floats ses_ss_prob = atom::SecondaryStructureResidue(get_model(), ses_[nse]).get_all_probabilities();
+
+        for(int i = 0; i < resinds.size(); i++){
       
-      for (int k = 0; k < 3; k++){
-        ses_ss_probs[resinds[i]-1][k] = ses_ss_prob[k];
-      }
+          for (int k = 0; k < 3; k++){
+            ses_ss_probs[resinds[i]-1][k] = ses_ss_prob[k];
+          }
+        }
     }
   }
 
