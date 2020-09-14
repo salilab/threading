@@ -8,22 +8,40 @@ import IMP.pmi.tools
 import random
 import numpy
 import math
+import operator
 from copy import deepcopy
 
 class Loop():
-    def __init__(self, start=0, length=0, se_before_id=-1, se_after_id=-1):
-        self.start=start
-        self.length=length
-        self.se_before_id=se_before_id
-        self.se_after_id=se_after_id
+    '''
+    A Loop object stores a set of contiguous residues corresponding to an unmodeled length of sequence
+    
+    Loops also contain pointers to StructureElement object IDs immediately N-terminal and C-terminal to this loop.
+    These IDs are key values for a StructureElement dictionary.
+
+    If this loop starts at the N-terminus, then self.se_before_id = -1 and similarly is it is a C-terminal loop
+    '''
+    def __init__(self, chain_id="A", start=0, length=0, se_before_id=-1, se_after_id=-1):
+        self.start = start
+        self.chain_id = chain_id
+        self.length = length
+        self.se_before_id = se_before_id
+        self.se_after_id = se_after_id
+        
     def get_loop_residues(self):
         return list(range(self.start, self.start+self.length))
 
-    def generate_loop_id(self):
-        return str(self.start)+"_"+str(self.length)+"_"+str(self.se_before_id)+"_"+str(self.se_after_id)
+    def get_loop_chain(self):
+        return self.chain_id
 
-    def is_res_in_loop(self, resnum):
-        if resnum in self.get_loop_residues():
+    def generate_loop_id(self):
+        # The loop ID is a unique identifier that contains all of the information about this loop:
+        # chain, start residue, length, SE before and SE after.
+        return self.chain_id+"_"+str(self.start)+"_"+str(self.length)+"_"+str(self.se_before_id)+"_"+str(self.se_after_id)
+
+    def is_res_in_loop(self, residue):
+        # Check if the given residue [as a tuple: (chain_id, resnum)] is contained in this loop
+        chain_id = residue[0]
+        if resnum in self.get_loop_residues() and chain_id == self.chain_id:
             return True
         else:
             return False
@@ -49,18 +67,20 @@ class SSEThread(IMP.ModelObject):
         self.root_hier.add_child(self.sequence_hierarchy)
 
     def build_sequence_chains(self, sequences):
-        # Given a fasta sequence and the root hierarchy, build the sequence chain
+        # Given a list of (chain_id, fasta sequence) tuples, build the sequence chains
 
         sse_res_id = 1
         for s in range(len(sequences)):
-            new_seq_chain = IMP.atom.Chain.setup_particle(IMP.Particle(self.model), "S"+str(s))
+            chain_id = sequences[0]
+            fasta = sequences[1]
+            new_seq_chain = IMP.atom.Chain.setup_particle(IMP.Particle(self.model), str(chain_id))
             self.sequence_hierarchy.add_child(new_seq_chain)
 
-            for i in range(len(sequences[s])):
+            for i in range(len(fasta)):
                 pr = IMP.Particle(self.model)
                 # Setup residue/mass/xyzr
                 res = IMP.atom.Residue.setup_particle(pr,
-                                            IMP.pmi.tools.get_residue_type_from_one_letter_code(sequences[s][i]),
+                                            IMP.pmi.tools.get_residue_type_from_one_letter_code(fasta[i]),
                                             sse_res_id)
                 #res_particles.append(res.get_particle())
                 IMP.atom.Mass.setup_particle(res.get_particle(), IMP.atom.get_mass(res.get_residue_type()))
@@ -76,16 +96,16 @@ class SSEThread(IMP.ModelObject):
                 new_seq_chain.add_child(res)
                 sse_res_id+=1
 
-        self.compute_chain_breaks()
         return self.sequence_hierarchy
 
-    def compute_chain_breaks(self):
-        self.chain_breaks=[]
-        start_res=0
-        for chain in self.sequence_hierarchy.get_children():
-            self.chain_breaks.append(len(chain.get_children())+start_res)
-            start_res = self.chain_breaks[-1]
-        return self.chain_breaks
+    def get_sequence_chain_lengths(self):
+        chain_lengths = {}
+        
+        for c in self.sequence_hierarchy.get_children():
+            chain_id = IMP.atom.Chain(c).get_id()
+            chain_lengths[chain_id] = len(c.get_children())
+
+        return chain_lengths
 
     def extract_structure_elements_from_smotif_pdbs(self, smotif_pdbs, stride=None):
         '''
@@ -132,12 +152,9 @@ class SSEThread(IMP.ModelObject):
                 self.structure_elements[se_ix] = self.setup_structure_element(coords0, "H", 0, 1, 0)
                 self.structure_elements[se_ix+1] = self.setup_structure_element(coords1, "H", 0, 1, 0)
 
-            #print(p)
-            #print("   ", structure_elements[se_ix].get_coordinates()[0:3])
-            #print("   ", structure_elements[se_ix+1].get_coordinates()[0:3])
             se_ix+=2
 
-        print("Keys", self.structure_elements.keys())
+        print("Keys", self.structure_elements.keys(), self.structure_elements.get_chain())
         return self.structure_elements
 
     def setup_structure_element(self, coordinates, sec_struct, start_residue=0, polarity=1, offset=0, chain_id="A", stride=None):
@@ -160,7 +177,8 @@ class SSEThread(IMP.ModelObject):
             if stride is not None:
                 IMP.atom.SecondaryStructureResidue.setup_particle(np, stride[c][0], stride[c][1], stride[c][2])
 
-        se = IMP.threading.StructureElement.setup_particle(self.model, se_pi.get_index(),
+        se = IMP.threading.StructureElement.setup_particle(self.model, 
+                                                        se_pi.get_index(),
                                                         start_residue,
                                                         polarity,
                                                         len(coordinates),
@@ -213,7 +231,6 @@ class SSEThread(IMP.ModelObject):
 
     def get_built_residues(self):
         # Implementing a lookup table would be faster.
-        # Currently this step 
         built_res = []
 
         for xyz in self.system_xyzs:
@@ -247,107 +264,111 @@ class SSEThread(IMP.ModelObject):
             return built_ids
 
     def get_start_res_list(self):
+        # Return a list of start residues as (chain_id, resnum)
+        
         self.start_res_list=[]
         for se in range(len(self.structure_elements.keys())):
-            self.start_res_list.append(int(self.structure_elements[se].get_start_res()))
+            self.start_res_list.append( (self.structure_elements[se].get_chain(), 
+                                        int(self.structure_elements[se].get_start_res()))
+                                        )
         return self.start_res_list
 
     def get_all_loops(self):
         return self.get_loops(self.get_built_structure_element_ids())
 
     def sort_seids(self, seids):
+        # Returns a list of SEIDs
         if seids is None or len(seids)==0:
             return []
 
         ses = []
         
-        for s in seids:
-            ses.append((s, self.structure_elements[s].get_start_res()))
+        seq_chains = [IMP.atom.Chain(c).get_id() for c in self.sequence_hierarchy.get_children()]
 
-        sorted_ids = sorted(ses, key=lambda x: x[1])
-        return [s[0] for s in sorted_ids]
+        sorted_seids = {}
+        for c in seq_chains:
+            chain_seids = []
+            for s in seids:
+                se = self.structure_elements[s]
+                if se.get_chain() == c:
+                    chain_seids.append((s, se.get_start_res()))
+
+            s_chain_seids = sorted(chain_seids, key=operator.itemgetter(0))
+            sorted_seids[c] = [x[0] for x in s_chain_seids]
+
+        return sorted_seids
 
     def get_loops(self, seids, set_as=True):
-        # Given the current state of the system, return a list of loops
+        # Given a set of StructureElement IDs, return a dictionary of Loop objects
 
-        sorted_ses_ids = self.sort_seids(seids)
+        # First, get a dictionary of SEIDs sorted by chain and residue number
+        sorted_chain_ses_ids = self.sort_seids(seids)
 
-        print([self.structure_elements[seid].get_start_res() for seid in sorted_ses_ids])
         loops = {}
 
-        new_loop_start = 1
-        chain = 0
-
-        new_se_before_id = -1
-        for s in range(len(sorted_ses_ids)):
-            seid = sorted_ses_ids[s]
-            start_res = int(self.structure_elements[seid].get_start_res())
-
-            # if this start_res is after a chain, then we need to 
-            if int(start_res) >= self.chain_breaks[chain]:
+        for chain_id in sorted_chain_ses_ids.keys():
+            sorted_ses_ids = sorted_chain_ses_ids[chain_id]
+          
+            # The first loop in a chain always starts at 1 and has no SE N-terminal to it
+            new_loop_start = 1
+            new_se_before_id = -1
+          
+            for s in range(len(sorted_ses_ids)):
+              
+                seid = sorted_ses_ids[s]
+                start_res = int(self.structure_elements[seid].get_start_res())
                 start = new_loop_start
-                length = self.chain_breaks[chain]-new_loop_start-1
-                new_loop = Loop(start=start,
+                length = start_res - new_loop_start - 1
+                new_loop = Loop(chain_id=chain_id, 
+                                start=start,
                                 length=length,
-                                se_before_id=new_se_before_id,
-                                se_after_id=-1)
-                loop_id = new_loop.generate_loop_id()
-                loops[loop_id] = new_loop
-                            
-                chain+=1
-
-                # New loop startes at N-term of the new chain
-                new_loop_start=self.chain_breaks[chain]
-                new_se_before_id = -1
-                s-=1 # Need to do this SE again
-
-            else:
-                new_loop = Loop(start=new_loop_start,
-                                length=start_res-new_loop_start,
                                 se_before_id=new_se_before_id,
                                 se_after_id=seid)
                 loop_id = new_loop.generate_loop_id()
+                
+                #Generate loop ID and add to dictionary
                 loops[loop_id] = new_loop
-                new_loop_start = start_res+loops[loop_id].length
-                new_se_before_id = seid
 
-        # Now, manually do the last loop(s)
-        for i in range(chain, len(self.chain_breaks)):
-            length = self.chain_breaks[i]-new_loop_start+1
+                # New loop starts at the end of this StructureElement
+                new_loop_start = start_res + self.structure_elements[seid].get_length()                
+
+            # Now do the last loop
+            length = self.get_sequence_chain_lengths()[chain_id]-new_loop_start
+            
             new_loop = Loop(start=new_loop_start,
                         length=length,
                         se_before_id=new_se_before_id,
                         se_after_id=-1)
             loop_id = new_loop.generate_loop_id()
             loops[loop_id] = new_loop
-            new_loop_start=self.chain_breaks[i]+1
             new_se_before_id=-1
 
+        # Set this loop dictionary as the system's
         if set_as:
             self.loops=loops
 
         return loops
 
-    def is_se_allowed_in_model(self, structure_element_id):
+    def is_se_allowed_in_model(self, seid):
         built_seids = self.get_built_structure_element_ids()
 
         # If structure element is built, then it is allowed
-        if structure_element_id in built_seids:
+        if seid in built_seids:
             return True
 
         # If any built SE clashes (table=-1), then it is not allowed
         for b in built_seids:
-            if self.se_min_loop_table[structure_element_id][b]==-1:
+            if self.se_min_loop_table[seid][b]==-1:
                 return False
         return True
 
-    def get_available_start_residues(self, structure_element_id, same_loop=False):
+    def get_available_start_residues(self, seid, same_loop=False):
         # Given a structure element, find the start residues available to it
         available_residues = []
 
-        se = self.structure_elements[structure_element_id]
+        se = self.structure_elements[seid]
         # If not allowed due to clash, then return nothing
-        if not self.is_se_allowed_in_model(structure_element_id):
+        if not self.is_se_allowed_in_model(seid):
             return []
 
         # If allowed, then look at all loops
@@ -355,24 +376,25 @@ class SSEThread(IMP.ModelObject):
 
         # If same loop, we want to only return residues that are within the loop vacated by this SE
         if same_loop:
-            before_loop, after_loop = self.get_loop_ids_bracketing_seid(structure_element_id)
+            before_loop, after_loop = self.get_loop_ids_bracketing_seid(seid)
             all_loop_resis = list(range(self.loops[before_loop].start, self.loops[after_loop].start + self.loops[after_loop].length))
             br = 0
             ar = 0
             if self.loops[before_loop].se_before_id != -1:
-                br = int(self.se_min_loop_table[self.loops[before_loop].se_before_id][structure_element_id])
+                br = int(self.se_min_loop_table[self.loops[before_loop].se_before_id][seid])
             if self.loops[after_loop].se_after_id != -1:
-                ar = int(self.se_min_loop_table[structure_element_id][self.loops[after_loop].se_after_id])
+                ar = int(self.se_min_loop_table[seid][self.loops[after_loop].se_after_id])
             
             #print("Same loop", structure_element_id, se.get_start_res(), "||", before_loop, after_loop, "||", len(all_loop_resis), ar, se_len, all_loop_resis[br:len(all_loop_resis)-ar-se_len])
             if len(all_loop_resis) - ar - se_len - br + 1 <=0:
                 print("No resis.  Weird!!")
-                print("Same loop", structure_element_id, se.get_start_res(), se_len, "||", before_loop, after_loop, "||", len(all_loop_resis), br, ar, all_loop_resis[br:len(all_loop_resis)-ar-se_len+1])
+                print("Same loop", seid, se.get_start_res(), se_len, "||", before_loop, after_loop, "||", len(all_loop_resis), br, ar, all_loop_resis[br:len(all_loop_resis)-ar-se_len+1])
                 exit()
                 return []
             else:
-                return all_loop_resis[br:len(all_loop_resis)-ar-se_len+1]
-        
+                for resnum in all_loop_resis[br:len(all_loop_resis)-ar-se_len+1]:
+                    available_residues.append((se.get_chain(), resnum))
+                return available_residues       
         else:
             loops = self.loops
 
@@ -392,20 +414,22 @@ class SSEThread(IMP.ModelObject):
                 br=0
             # Otherwise, see how many residues this SE needs to be from the SE before
             else:
-                br = int(self.se_min_loop_table[loop.se_before_id][structure_element_id])
+                br = int(self.se_min_loop_table[loop.se_before_id][seid])
             # Now do the same for the C-terminus
             if loop.se_after_id==-1:
                 ar=0
             else:
-                ar = int(self.se_min_loop_table[structure_element_id][loop.se_after_id])
+                ar = int(self.se_min_loop_table[seid][loop.se_after_id])
 
             # If, after subtracting the offsets, the loop is now too small, continue without adding residues
-            if loop.length -br - ar - se_len <= 0:
+            if loop.length - br - ar - se_len <= 0:
                 continue
 
             else:
                 resis = loop.get_loop_residues()
-                available_residues+=resis[br:len(resis)-ar-se_len-1]
+
+                for resnum in resis[br:len(resis)-ar-se_len-1]:
+                    available_residues.append(loop.chain_id, resnum)
         
         return available_residues
 
@@ -425,25 +449,50 @@ class SSEThread(IMP.ModelObject):
         return before_loop_id, after_loop_id
 
     def compare_seids_and_loop_table(self):
-        # Self-consistency check that loops and structure elements are the same:
-        good =True 
+        # Self-consistency check that loops and structure elements are the same
+        # Currently used as a debugger and prints out all errors.
+
+        # We check things until we find an inconsistency.
+        good = True 
+
         # First, check the before and after SEIDs for the loops
         for lk in self.loops.keys():
             l = self.loops[lk]
+
+            # If not an N-terminal loop
             if l.se_before_id!=-1:
                 se = self.structure_elements[l.se_before_id]
+                
+                # Check that chains are the same
+                if se.get_chain() != l.chain_id:
+                    print("Loop and SE have different chains!!", seid, lk)
+                    good=False
+
+                # Check that the loop starts one residue after the N-terminal SE
                 if se.get_resindex_list()[-1]+1 != l.start:
                     print(se.get_resindex_list(), se.get_start_res(), se.get_length())
                     print("--XX-- SEID", l.se_before_id, se.get_start_res(), se.get_resindex_list()[-1], ":: LOOP after", l.start, l.start+l.length, l.get_loop_residues)
                     good=False
+
+            # If not a C_terminal loop
             if l.se_after_id!=-1:
                 se = self.structure_elements[l.se_after_id]
-                if se.get_start_res() != l.start+l.length:
+
+                # Check that chains are the same
+                if se.get_chain() != l.chain_id:
+                    print("Loop and SE have different chains!!", seid, lk)
+                    good=False
+
+                # Check that the C-terminal SE starts one residue after the loop ends
+                if se.get_start_res() != l.start + l.length:
                     print(se.get_resindex_list(), se.get_start_res(), se.get_length())
                     print("--XX-- LOOP", l.start, l.start+l.length, l.get_loop_residues(),"SEID After", l.se_after_id, se.get_start_res(), se.get_resindex_list()[-1],)
                     good=False
+        
+        # TODO:: Can't currently do this second check.  Need to get all residues.
+        '''
         # Second, check that there are no overlapping SEs
-        all_residues = list(range(1,self.chain_breaks[-1]+1))
+        all_residues = list(range(1,self.get_sequence_lengths()[l.chain_id]))
 
         for i in self.get_built_structure_element_ids():
             se = self.structure_elements[i]
@@ -456,6 +505,7 @@ class SSEThread(IMP.ModelObject):
                     good=False
                 else:
                     all_residues.remove(r)
+        '''
 
         # Third, check that each SEID is only used once as a beginning and end
         before_ids = []
@@ -484,21 +534,16 @@ class SSEThread(IMP.ModelObject):
                 good=False
               else:
                 after_ids.append(l.se_after_id)
+        
         return good
 
-    def get_residue_chain_termini(self, resnum):
-        # For a given residue, return the N- and C-terminal residues for the chain it is in
-        chains = [0]+self.chain_breaks
-        for c in range(1, len(chains)):
-            if resnum < chains[c]:
-                return [chains[c-1]+1, chains[c]]
-
-        raise Exception("Residue", resnum, "not in sequence")
-
     def remove_se_from_loop_table(self, seid):
+        # Combine the loops immediately N- and C-terminal of this SE
+
         # First, get the two loops that we will combine        
         before_loop_id, after_loop_id = self.get_loop_ids_bracketing_seid(seid)
       
+        chain_id = self.sequence_elements[seid].get_chain()
         # If no loops are found, this SEID was not built into the model
         # Just return.
         if before_loop_id is None and after_loop_id is None:
@@ -514,7 +559,7 @@ class SSEThread(IMP.ModelObject):
             # Start of the new loop will now be the start residue of the SEID
             # And there is no SE before this loop now (since it starts at N-terminus
             after_loop = self.loops[after_loop_id]
-            start = self.get_residue_chain_termini(after_loop.start)[0]
+            start = 1
             se_before_id = -1
 
         if after_loop_id is not None:
@@ -523,12 +568,13 @@ class SSEThread(IMP.ModelObject):
             se_after_id = after_loop.se_after_id
         else:
             # This SE ends at the C-terminus.
-            length = self.get_residue_chain_termini(start)[1] - start
+            length = self.get_sequence_chain_lengths()[chain_id] - start
             se_after_id = -1
        
         if length < 0:
             print("rem HELP!", length, start)
-        new_loop = Loop(start=start,
+        new_loop = Loop(chain_id=chain_id,
+                        start=start,
                         length=length,
                         se_before_id=se_before_id,
                         se_after_id=se_after_id)
@@ -548,15 +594,21 @@ class SSEThread(IMP.ModelObject):
         self.loops[new_loop_id] = new_loop
 
     def add_se_to_loop_table(self, seid, new_sr):
-        
+        # Given an SEID and a new start residue, modify the loop table to account for this.
+
+        chain_id = new_sr[0]
+        resnum = new_sr[1]
+
         # ensure no overlap:
-        built = [IMP.atom.Residue(r).get_index() for r in self.get_built_residues()]
+        # TODO - reimplement for multi-chain. Add chain_id to "get_built_residues".
+        '''
+        built = [IMP.atom.Residue(r).get_index() for r in self.get_built_residues(chain_id=chain_id)] 
         for r in range(new_sr, new_sr+self.structure_elements[seid].get_length()):
             if r in built:
                 print(built)
                 print("What you doing!?!?!", r, "is already built", self.structure_elements[seid].get_resindex_list())
                 exit()
-
+        '''
         # If the new SR is zero, do not add anything
         if new_sr == 0:
             return
@@ -565,13 +617,13 @@ class SSEThread(IMP.ModelObject):
         
         # Find the loop containing new_sr
         for lk in self.loops.keys():
-            if self.loops[lk].is_res_in_loop(new_sr):
+            if self.loops[lk].is_res_in_loop(chain_id, resnum):
                 this_loop = self.loops[lk]
                 break
         
         if this_loop is None:
             self.compare_seids_and_loop_table()
-            raise Exception("No loop found for SEi", seid, " starting at", new_sr, [(self.loops[s].start, self.loops[s].start+self.loops[s].length-1) for s in self.loops.keys()])
+            raise Exception("No loop found for SEID", seid, "in chain", chain_id, "starting at", resnum, [(self.loops[s].start, self.loops[s].start+self.loops[s].length-1) for s in self.loops.keys()])
         
         extra_string=""
         # Mode is the number of new loops we make
@@ -606,7 +658,7 @@ class SSEThread(IMP.ModelObject):
         if 0==0:
             # Make the first loop
             start = this_loop.start
-            length = new_sr - start
+            length = resnum - start
 
             if length < 0:
                 print("HELP!", length, start, this_loop)
@@ -627,34 +679,33 @@ class SSEThread(IMP.ModelObject):
             length = this_loop.start+this_loop.length-start
             
             if length < 0:
-                print("HELP!", length, this_loop.start, this_loop.length, "|", start, new_sr, self.structure_elements[seid].get_length(), "|", this_loop.generate_loop_id(), extra_string)
+                print("HELP!", length, this_loop.start, this_loop.length, "|", chain_id, start, resnum, self.structure_elements[seid].get_length(), "|", this_loop.generate_loop_id(), extra_string)
             
             se_before_id = seid
             se_after_id = this_loop.se_after_id
 
-            new_loop = Loop(start=start,
+            new_loop = Loop(chain_id=chain_id,
+                           start=start,
                            length=length,
                            se_before_id=se_before_id,
                            se_after_id=se_after_id)
             self.loops[new_loop.generate_loop_id()] = new_loop
             mode = 2
+        
         if mode == 2:
             snd_loop = self.loops[extra_string]
         
         else:
             i=0
-        #print("Add SE", seid, self.structure_elements[seid].get_start_res(), new_sr, (new_sr, self.structure_elements[seid].get_length()), "| Del loop", self.loops[lk].generate_loop_id(), "| Add loops", extra_string + " " + new_loop.generate_loop_id())
+
         del self.loops[lk]
 
 
+    def modify_loop_table(self, seid, new_sr):
+        # Given a new start residue (as a (chain_id, resnum)), modify the loop table for this seid
 
-    def modify_loop_table(self, seid, new_sr, remove=True):
-        
-        print(new_sr, self.structure_elements[seid].get_start_res(), [IMP.atom.Residue(p).get_index() for p in self.get_built_residues()])
-        
         # First, remove the seid loop 
         self.remove_se_from_loop_table(seid)
-        print(new_sr, self.structure_elements[seid].get_start_res(), [IMP.atom.Residue(p).get_index() for p in self.get_built_residues()])
         
         # Second, add the new loops to the table
         self.add_se_to_loop_table(seid, new_sr)
@@ -956,6 +1007,7 @@ class SSEDeletionMover(IMP.threading.SSEThreadMover):
         return self.structure_elements[seid]
 
     def do_propose(self):
+        
         # Get a random structure element that is built
         rand_srs = list(self.structure_elements.keys())
         random.shuffle(rand_srs)
@@ -1306,8 +1358,7 @@ class MonteCarlo():
 
         # Want additions and deletions based on number of built residues
         
-        # Additions are to
-        prop_additions = (1.0*(self.system.chain_breaks[-1]-len(self.system.get_built_residues()))/self.system.chain_breaks[-1])*self.addition_pct
+        prop_additions = (1.0*(len(self.system.system_xyzs)-len(self.system.get_built_residues()))/len(self.system.system_xyzs))*self.addition_pct
         prop_deletions = 1.0*len(self.system.get_built_structure_element_ids())*self.deletion_pct/100.0
         prop_shift = 1.0*len(self.system.get_built_structure_element_ids())*self.shift_pct/100.0
        
