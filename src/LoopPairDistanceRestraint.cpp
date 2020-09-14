@@ -100,7 +100,7 @@ ParticleIndexes LoopPairDistanceRestraint::get_sequence_residue_particles() cons
 Particles LoopPairDistanceRestraint::get_closest_built_residue_particles(ParticleIndex pi) const
 {
   // TODO: Ensure that input particle is a residue
-  // create vector for the endpoint particles
+  
   ParticlesTemp endpoints;
     
   atom::Residue r = atom::Residue(get_model(), pi);
@@ -117,23 +117,31 @@ Particles LoopPairDistanceRestraint::get_closest_built_residue_particles(Particl
   for (unsigned int i=1; i<1000; i++){
     // Get the next residue particle
     nextres = atom::get_next_residue(r);
+
     // If you hit the end of the chain, then just leave
     if (nextres.get_particle()==0){ break;}
     if (core::XYZ(nextres.get_particle()).get_coordinates_are_optimized()){
       endpoints.push_back(nextres.get_particle());
       break;
     }
-    r = atom::Residue(nextres.get_particle());
+
+    r = atom::Residue(nextres.get_particle()); 
   }
+  
   r = atom::Residue(get_model(), pi);
+  // Go backward in sequence space looking for a coordinate that is optimized
   for (int i=-1; i>-1000; i--){
+    // Get the previous residue
     prevres = atom::get_previous_residue(r);
+    
     // If you hit the end of the chain, then just leave
     if (prevres.get_particle()==0){ break;}
     if (core::XYZ(prevres.get_particle()).get_coordinates_are_optimized()){
       endpoints.push_back(prevres.get_particle());
       break;
+
     }
+
     r = atom::Residue(prevres.get_particle());
   }
   
@@ -198,6 +206,7 @@ double LoopPairDistanceRestraint::get_pair_distance(ParticleIndex pa,
   float new_dist;
 
   // If both residues are structured, computing the model distance is easy
+  
   if (a_opt==true and b_opt==true) {
     distance = core::get_distance(core::XYZ(get_model(), pa), core::XYZ(get_model(), pb));
     // If not this gets very ugly
@@ -397,7 +406,10 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
 /* Return all particles whose attributes are read by the restraints. To
    do this, ask the pair score what particles it uses.*/
 ModelObjectsTemp LoopPairDistanceRestraint::do_get_inputs() const {
-  return ModelObjectsTemp(1, get_model()->get_particle(a_));
+  ModelObjectsTemp ret;
+  ret.push_back(get_model()->get_particle(a_));
+  ret.push_back(get_model()->get_particle(b_));
+  return ret; //ModelObjectsTemp(1, get_model()->get_particle(a_));
 }
 
 IMPTHREADING_END_NAMESPACE
