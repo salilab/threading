@@ -87,6 +87,8 @@ void StructureElementMover::zero_coordinates(){
   atom::Hierarchy h(get_model(), s_hier_pi_);
   atom::Selection sel(h);
   sel.set_residue_indexes(se.get_resindex_list());
+  sel.set_chain(se.get_chain());
+  
   ParticlesTemp oldsel = sel.get_selected_particles();
   for (unsigned int i=0; i<sel.get_selected_particles().size(); i++) {
     core::XYZ coord(oldsel[i]);
@@ -113,7 +115,8 @@ void StructureElementMover::transform_coordinates(){
   atom::Selection sel(h);
  
   sel.set_residue_indexes(se.get_resindex_list());
-  
+  sel.set_chain(se.get_chain());
+
   // Select these particles
   ParticlesTemp new_resis = sel.get_selected_particles();
   
