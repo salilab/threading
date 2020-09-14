@@ -37,17 +37,23 @@ IMPTHREADING_BEGIN_NAMESPACE
 class IMPTHREADINGEXPORT StructureElement : public Decorator {
   ParticleIndex pi_;
 
-  static void do_setup_particle(Model *m, ParticleIndex pi,
-                                double start_res = 0, double polarity = 1,
-                                double length = 0, double offset = 0) {
+  static void do_setup_particle(Model *m,
+                                ParticleIndex pi,
+                                double start_res = 0,
+                                double polarity = 1,
+                                double length = 0,
+                                double offset = 0,
+                                std::string chain_id = 0) {
 
     ParticleIndex pi_ = pi;
 
+    
     m->add_attribute(get_start_res_key(), pi_, start_res);
     IMP_USAGE_CHECK( (polarity == -1 || polarity == 1), "Polarity must be 1 or -1" );
     m->add_attribute(get_polarity_key(), pi_, polarity);
     m->add_attribute(get_length_key(), pi_, length);
     m->add_attribute(get_offset_key(), pi_, offset);
+    m->add_attribute(get_chain_key(), pi_, chain_id);
   
   }
   int n_coordinates_;
@@ -59,17 +65,19 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
 
   IMP_DECORATOR_METHODS(StructureElement, Decorator);
   // Decorator setup works as:  ( NAME, v1type, v1name, v2type, v2name ...)
-  IMP_DECORATOR_SETUP_4(StructureElement, 
+  IMP_DECORATOR_SETUP_5(StructureElement,
                         int, start_res, 
                         int, polarity, 
                         int, length, 
-                        int, offset);
+                        int, offset,
+                        std::string, chain_id);
 
   static FloatKey get_start_res_key();
   static FloatKey get_polarity_key();
   static FloatKey get_length_key();
   static FloatKey get_offset_key();
-
+  static StringKey get_chain_key();
+  
   // Return all key values in a nice little vector
   Floats get_all_key_values(){
     Floats vals;
@@ -79,6 +87,10 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     vals.push_back(get_offset());
     return vals;
   }
+
+  //std::string get_chain_key_value(){
+  //return get_chain();
+  //}
 
   int get_start_res() {
     int i = int(get_model()->get_attribute(get_start_res_key(), get_particle_index()));
@@ -101,6 +113,10 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     return i;
   }
 
+  std::string get_chain() {
+    return get_model()->get_attribute(get_chain_key(), get_particle_index());
+  }
+ 
   // Return all of the coordinates
   algebra::Vector3Ds get_all_coordinates(){
     algebra::Vector3Ds coords;
@@ -137,6 +153,8 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     get_particle()->set_is_optimized(get_start_res_key(), tf);
     get_particle()->set_is_optimized(get_length_key(), tf);
     get_particle()->set_is_optimized(get_polarity_key(), tf);
+    //get_particle()->set_is_optimized(get_chain_key(), tf);
+    
   }
 
   void set_polarity_is_optimized(bool tf) const {
@@ -150,10 +168,12 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
   void set_length_is_optimized(bool tf) const {
     get_particle()->set_is_optimized(get_length_key(), tf);
   }
-
   void set_offset_is_optimized(bool tf) const {
     get_particle()->set_is_optimized(get_offset_key(), tf);
   }
+  //void set_chain_is_optimized(bool tf) const {
+  //  get_particle()->set_is_optimized(get_chain_key(), tf);
+  //}
   
   bool get_start_res_is_optimized() {
     return get_particle()->get_is_optimized(get_start_res_key());
@@ -167,7 +187,10 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
   bool get_offset_is_optimized() {
     return get_particle()->get_is_optimized(get_offset_key());
   }
-
+  //bool get_chain_is_optimized() {
+  //  return get_particle()->get_is_optimized(get_chain_key());
+  //}
+  
   // Get the list of residue indexes that these
   // coordinates map to.
   Ints get_resindex_list() {
@@ -197,7 +220,7 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     set_length_key(vals[2]);
     set_offset_key(vals[3]);
   }
-
+  
   // start_res_key can be anything in the structure
   void set_start_res_key(float i){ 
     get_particle()->set_value(get_start_res_key(), i);
@@ -231,6 +254,17 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
     IMP_USAGE_CHECK( (i + get_length() <= n_coordinates_), "Length plus offset cannot be greater than number of coordinates in StructureElement");
     get_particle()->set_value(get_offset_key(), i);
   };
+
+  void set_chain_key(std::string chain_id) {
+    get_particle()->set_value(get_chain_key(), chain_id);
+  };
+  
+  //void set_chain_key(Particle *chain) {
+  //  Pointer<Particle> p = get_particle();
+  //  ParticleKey k(get_chain_key());
+  //  std::cout << "chain" << k << "  " << chain << std::endl;
+  //  get_particle()->set_value(k, chain);
+  //};
 
   // *********************************************************
   // Functions for determining available move sets

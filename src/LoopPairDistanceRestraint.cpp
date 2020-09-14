@@ -12,6 +12,7 @@
 #include <IMP/atom/Hierarchy.h>
 #include <IMP/atom/Selection.h>
 #include <IMP/algebra/Vector3D.h>
+#include <typeinfo>
 
 IMPTHREADING_BEGIN_NAMESPACE
 
@@ -20,7 +21,38 @@ LoopPairDistanceRestraint::LoopPairDistanceRestraint(Model *m, UnaryFunction *sc
                     ParticleIndex b,
                     double n_sds,
                     std::string name)
-    : Restraint(m, "LoopPairDistanceRestraint%1%"), score_func_(score_func), a_(a), b_(b), n_sds_(n_sds) {}
+    : Restraint(m, "LoopPairDistanceRestraint%1%"),
+      score_func_(score_func),
+      a_(a),
+      b_(b),
+      n_sds_(n_sds),
+      amb_rest_(false){
+
+  int i  = atom::Residue(get_model(), a_).get_index();
+}
+
+
+LoopPairDistanceRestraint::LoopPairDistanceRestraint(Model *m, UnaryFunction *score_func,                     
+                    ParticleIndexes as,
+                    ParticleIndexes bs,
+                    double n_sds,
+                    double distance_threshold,
+                    std::string name):
+  Restraint(m, "LoopPairDistanceRestraint%1%"),
+  score_func_(score_func),
+  n_sds_(n_sds),
+  distance_threshold_(distance_threshold),
+  amb_rest_(true){
+
+  for (unsigned int i = 0; i < as.size(); i++){
+    as_.push_back(as[i]);
+  }
+ 
+ for (unsigned int i = 0; i < bs.size(); i++){
+    bs_.push_back(bs[i]);
+  }
+}
+
 
 /* Find the closest built residues to particle pi. (Should put this as a helper function)
  */
@@ -49,7 +81,7 @@ double LoopPairDistanceRestraint::calc_sphere_cap_distance(float R, float d, flo
   // For debugging.  If DIST == NaN, this trips.
   if (dist!=dist){
    int i=1;  
-   std::cout << "THe sphere cap distance is undefined.  There is some error in the LoopPairDistanceRestraint calculation" << std::endl;
+   std::cout << "The sphere cap distance is undefined.  There is some error in the LoopPairDistanceRestraint calculation" << std::endl;
    //std::cout << "    NANNAN-R,d,a,RR,dd: " << R << ", " << d << ", " << alpha << " " << R*R << " " << d*d*(sina*sina - 1 ) << " " << sina << " || " << dist <<std::endl;
   }
   return dist;
@@ -70,6 +102,7 @@ Particles LoopPairDistanceRestraint::get_closest_built_residue_particles(Particl
   // TODO: Ensure that input particle is a residue
   
   ParticlesTemp endpoints;
+    
   atom::Residue r = atom::Residue(get_model(), pi);
   atom::Hierarchy nextres;
   atom::Hierarchy prevres;
@@ -78,19 +111,20 @@ Particles LoopPairDistanceRestraint::get_closest_built_residue_particles(Particl
   // Get the chain of this residue
   atom::Hierarchy res(get_model(), pi);
   atom::Hierarchy seq_chain = res.get_parent();
-  
+    
   // Go forward in sequence space looking for a coordinate that is optimized (max = 1000)
-  // This is very slow, especially for sparsely built models  and should be optimized
+  // This is very slow, especially for sparsely built models and should be optimized
   for (unsigned int i=1; i<1000; i++){
     // Get the next residue particle
     nextres = atom::get_next_residue(r);
-    
+
     // If you hit the end of the chain, then just leave
     if (nextres.get_particle()==0){ break;}
     if (core::XYZ(nextres.get_particle()).get_coordinates_are_optimized()){
       endpoints.push_back(nextres.get_particle());
       break;
     }
+
     r = atom::Residue(nextres.get_particle()); 
   }
   
@@ -105,12 +139,15 @@ Particles LoopPairDistanceRestraint::get_closest_built_residue_particles(Particl
     if (core::XYZ(prevres.get_particle()).get_coordinates_are_optimized()){
       endpoints.push_back(prevres.get_particle());
       break;
-    } 
+
+    }
+
     r = atom::Residue(prevres.get_particle());
   }
+  
   return endpoints;
 }
-
+ 
 algebra::Vector3D LoopPairDistanceRestraint::get_sphere_cap_center(Particle* P0, Particle* P1, float R0, float R1) const {
   // First, define the unit vector connecting the two centers
   algebra::Vector3D Dvec = core::XYZ(get_model(), P0->get_index()).get_coordinates() - core::XYZ(get_model(), P1->get_index()).get_coordinates();
@@ -131,7 +168,7 @@ double LoopPairDistanceRestraint::get_loop_distance(int a, int b) const {
   int res_dist = abs(a - b);
   float mean_a;
   float sd_a;
-
+  
   if(res_dist < 30) { 
     mean_a = hh_means_[res_dist-1]; sd_a = hh_sds_[res_dist-1];
   } else { 
@@ -145,12 +182,14 @@ double LoopPairDistanceRestraint::get_loop_distance(int a, int b) const {
   return dist;
 }
 
-double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *accum)
+double LoopPairDistanceRestraint::get_pair_distance(ParticleIndex pa,
+                                                    ParticleIndex pb)
     const {
-  //IMP_CHECK_OBJECT(a_.get());
-  //IMP_CHECK_OBJECT(b_.get());
+  //IMP_CHECK_OBJECT(pa.get());
+  //IMP_CHECK_OBJECT(pb.get());
   IMP_CHECK_OBJECT(score_func_);
   IMP_OBJECT_LOG;
+  
   algebra::Vector3D a_center;
   algebra::Vector3D b_center;
   float offset_a;
@@ -158,9 +197,8 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
   float center_dist;
 
   // Find if either or both residues have coordinates (using are_optimized as a proxy for this)
-  bool a_opt = core::XYZ(get_model(), a_).get_coordinates_are_optimized();
-  bool b_opt = core::XYZ(get_model(), b_).get_coordinates_are_optimized();
-  double score;
+  bool a_opt = core::XYZ(get_model(), pa).get_coordinates_are_optimized();
+  bool b_opt = core::XYZ(get_model(), pb).get_coordinates_are_optimized();
 
   // Determine XL evaluation distance in all circumstances...this could be written much better
   float distance = 1000;  // model distance
@@ -170,8 +208,7 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
   // If both residues are structured, computing the model distance is easy
   
   if (a_opt==true and b_opt==true) {
-    distance = core::get_distance(core::XYZ(get_model(), a_), core::XYZ(get_model(), b_));
-  
+    distance = core::get_distance(core::XYZ(get_model(), pa), core::XYZ(get_model(), pb));
     // If not this gets very ugly
   } else {
 
@@ -189,26 +226,25 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
 
     // If A is structured, then its center is 
     if (a_opt==true) {
-      a_center = core::XYZ(get_model(), a_).get_coordinates();
+      a_center = core::XYZ(get_model(), pa).get_coordinates();
     } else {
-
-      // Find particles of closest built residues to b_
-      ps_a = get_closest_built_residue_particles(a_);
-
+      ps_a = get_closest_built_residue_particles(pa);
+      
       if (ps_a.size()==1){
 	  // If there is only one endpoint, then the center of the uncertainty sphere is this atom.
-	a_center = core::XYZ(get_model(), ps_a[0]->get_index()).get_coordinates();
+      a_center = core::XYZ(get_model(), ps_a[0]->get_index()).get_coordinates();
       } else if (ps_a.size()==0) {
 	  // If there are no endpoints found, then the crosslink endpoint is on a completely disordered chain.
 	  // What does this mean?  For now, return a constant value, however this is not optimal
 	  // However, the likelihood of a completely disordered chain is small.
-          return 10;
+         return 10;
       } else {
-      // Get sphere cap parameters
-        D_vec_a = core::XYZ(get_model(), ps_a[0]->get_index()).get_coordinates() - core::XYZ(get_model(), ps_a[1]->get_index()).get_coordinates(); // Vector between structured endpoints
+         // Get sphere cap parameters
+        // Vector between structured endpoints
+        D_vec_a = core::XYZ(get_model(), ps_a[0]->get_index()).get_coordinates() - core::XYZ(get_model(), ps_a[1]->get_index()).get_coordinates(); 
         
-        R0_a = get_loop_distance(atom::Residue(ps_a[0]).get_index(), atom::Residue(get_model(), a_).get_index());
-        R1_a = get_loop_distance(atom::Residue(ps_a[1]).get_index(), atom::Residue(get_model(), a_).get_index());
+        R0_a = get_loop_distance(atom::Residue(ps_a[0]).get_index(), atom::Residue(get_model(), pa).get_index());
+        R1_a = get_loop_distance(atom::Residue(ps_a[1]).get_index(), atom::Residue(get_model(), pa).get_index());
       
         // Compute Center of sphere cap
         if (R0_a > R1_a + D_vec_a.get_magnitude()){
@@ -216,37 +252,32 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
         } else if (R1_a > R0_a + D_vec_a.get_magnitude()) {
           a_center = core::XYZ(get_model(), ps_a[1]->get_index()).get_coordinates();
         } else {
-          a_center = get_sphere_cap_center(ps_a[0], ps_a[1], R0_a, R1_a);        
+          a_center = get_sphere_cap_center(ps_a[0], ps_a[1], R0_a, R1_a);    
         }
-
       }
-
     }
 
     //----------------------------------------
     // Now we do the same as above for Particle B
     if (b_opt==true) {
-      b_center = core::XYZ(get_model(), b_).get_coordinates();
+      b_center = core::XYZ(get_model(), pb).get_coordinates();
     } else {
 
-      // Find particles of closest built residues to b_
-      ps_b = get_closest_built_residue_particles(b_);
-      //if both endpoints are in the same loop, it is satisfied - Do we really want to do this?
-      //if (ps_b[0]==ps_a[0] && ps_b[1]==ps_a[1]){return 0;}
-      //if (ps_b[1]==ps_a[0] && ps_b[0]==ps_a[1]){return 0;}
-
-
+      // Find particles of closest built residues to pb
+      ps_b = get_closest_built_residue_particles(pb);
+       
       // Get sphere cap parameters
       if (ps_b.size()==1) {
-	  b_center = core::XYZ(get_model(), ps_b[0]->get_index()).get_coordinates();
+      	  b_center = core::XYZ(get_model(), ps_b[0]->get_index()).get_coordinates();
       } else if (ps_b.size()==0) {
-	  return 10;
+      	  return 10;
       } else {
-        D_vec_b = core::XYZ(get_model(), ps_b[0]->get_index()).get_coordinates() - core::XYZ(get_model(), ps_b[1]->get_index()).get_coordinates(); // Vector between structured endpoints
+        // Vector between structured endpoints
+        D_vec_b = core::XYZ(get_model(), ps_b[0]->get_index()).get_coordinates() - core::XYZ(get_model(), ps_b[1]->get_index()).get_coordinates();
       
-        R0_b = get_loop_distance(atom::Residue(ps_b[0]).get_index(), atom::Residue(get_model(), b_).get_index());
-        R1_b = get_loop_distance(atom::Residue(ps_b[1]).get_index(), atom::Residue(get_model(), b_).get_index());
-      
+        R0_b = get_loop_distance(atom::Residue(ps_b[0]).get_index(), atom::Residue(get_model(), pb).get_index());
+        R1_b = get_loop_distance(atom::Residue(ps_b[1]).get_index(), atom::Residue(get_model(), pb).get_index());
+        
         // Center of uncertainty volume
         if (R0_b > R1_b + D_vec_b.get_magnitude()){
           b_center = core::XYZ(get_model(), ps_b[0]->get_index()).get_coordinates();
@@ -262,19 +293,22 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
     // Now that we've computed the sphere cap centers, we can compute the model distance
     // Get vector from sc_center to other endpoint
     algebra::Vector3D xl_vec = a_center - b_center;
+    //std::cout<<"center_dist "<<std::endl;
     center_dist = algebra::get_distance(a_center, b_center);
+    //std::cout<<"center_dist "<<std::endl;
     
+    //std::cout<<"center distance "<< a_center<< " "<<b_center<<" "<<center_dist<<std::endl;
     // Now, subtract the distance from the center to the intersections of the sphere caps
     // We also consider the loop lengths when a_ is not ordered
     if (a_opt==true){
       offset_a = 0;
       // If a_ only has one endpoint (is on a terminal loop) the loop distance is simple to compute
     } else if (ps_a.size()==1){
-      offset_a = get_loop_distance(atom::Residue(ps_a[0]).get_index(), atom::Residue(get_model(), a_).get_index());
+      offset_a = get_loop_distance(atom::Residue(ps_a[0]).get_index(), atom::Residue(get_model(), pa).get_index());
     } else  {
       //If a_ has two endpoints, then we must compute the angle between the XL vector and D vector to find where it
       // intersects the sphere cap  
-      avec = (D_vec_b * xl_vec) / (D_vec_b.get_magnitude() * xl_vec.get_magnitude());
+      avec = (D_vec_a * xl_vec) / (D_vec_a.get_magnitude() * xl_vec.get_magnitude());
       
       // Sometimes floating point errors cause problems at the bounds
       if (avec > 1.0){alpha=0;}
@@ -298,7 +332,7 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
     if (b_opt==true){
       offset_b = 0;
     } else if (ps_b.size()==1){
-      offset_b = get_loop_distance(atom::Residue(ps_b[0]).get_index(), atom::Residue(get_model(), b_).get_index());
+      offset_b = get_loop_distance(atom::Residue(ps_b[0]).get_index(), atom::Residue(get_model(), pb).get_index());
     } else  {
       // Get sphere cap angle
       avec = (D_vec_b * xl_vec) / (D_vec_b.get_magnitude() * xl_vec.get_magnitude());
@@ -323,11 +357,51 @@ double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *ac
     distance = center_dist - offset_a - offset_b;
   }
 
-  // Evaluate the score based on this distance
-  score = score_func_->evaluate(distance);
-  //std::cout << " || Score: " << score << " " << distance << " " << center_dist << " " << offset_a << " " << offset_b << " | " << a_opt << " " << b_opt << std::endl; 
-  return score;
+  return distance;
 }
+
+double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *accum)
+    const {
+
+
+  double distance;
+  double score;
+  int satif = 0;
+  double min_distance;
+
+  map_endpoints_.clear();
+  
+  if (amb_rest_==false) {  
+    distance = get_pair_distance(a_, b_);
+    // Evaluate the score based on this distance
+    score = score_func_->evaluate(distance);
+  }
+  else{ 
+    Vector<double> all_distances;
+    //all_distances.clear();
+    
+    for (unsigned int i = 0; i < as_.size(); i++){
+      for(unsigned int j = i; j < bs_.size(); j++){
+        
+        distance = get_pair_distance(as_[i], bs_[j]);
+        if (distance < distance_threshold_){
+          min_distance = distance;
+          satif = 1;
+          break;
+        }
+        else {
+          all_distances.push_back(distance);
+        }
+      }
+    }
+    if(satif == 0){
+      min_distance = *min_element(all_distances.begin(), all_distances.end());
+    }
+    score = score_func_->evaluate(min_distance);
+  }
+  return score;
+}  
+
 
 /* Return all particles whose attributes are read by the restraints. To
    do this, ask the pair score what particles it uses.*/

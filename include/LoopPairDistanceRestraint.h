@@ -18,6 +18,7 @@
 #include <IMP/base_types.h>
 #include <IMP/exception.h>
 #include <IMP/UnaryFunction.h>
+#include <boost/unordered_map.hpp>
 
 IMPTHREADING_BEGIN_NAMESPACE
 
@@ -54,7 +55,16 @@ IMPTHREADING_BEGIN_NAMESPACE
 class IMPTHREADINGEXPORT LoopPairDistanceRestraint : public Restraint {
   ParticleIndex a_;
   ParticleIndex b_;
+  ParticleIndexes as_;
+  ParticleIndexes bs_;
+
+  bool amb_rest_ = false;
+
   double n_sds_;
+  double distance_threshold_;
+  // Mapping chain, residue to endpoints
+  mutable boost::unordered_map<ParticleIndex, ParticlesTemp> map_endpoints_;
+  
   IMP::PointerMember<UnaryFunction> score_func_;
 
  public:
@@ -68,6 +78,13 @@ class IMPTHREADINGEXPORT LoopPairDistanceRestraint : public Restraint {
                     double n_sds,
                     std::string name = "LoopPairDistanceRestraint %1%");
 
+  LoopPairDistanceRestraint(Model *m, UnaryFunction *score_func,                     
+                    ParticleIndexes as,
+                    ParticleIndexes bs,
+                    double n_sds,
+                    double distance_threshold,        
+                    std::string name = "LoopPairDistanceRestraint %1%");
+
   double calc_sphere_cap_distance(float R, float d, float alpha) const;
 
   Particles get_closest_built_residue_particles(ParticleIndex pi) const;
@@ -77,6 +94,10 @@ class IMPTHREADINGEXPORT LoopPairDistanceRestraint : public Restraint {
   algebra::Vector3D get_sphere_cap_center(Particle* P0, Particle* P1, float R0, float R1) const;
 
   double get_loop_distance(int a, int b) const;
+
+  double get_pair_distance(ParticleIndex pa, ParticleIndex pb) const;
+
+  algebra::Vector3D get_cap_center(ParticleIndex p_sel) const;
 
   double unprotected_evaluate(DerivativeAccumulator *accum) const
       IMP_OVERRIDE;
