@@ -140,7 +140,7 @@ class SSEThread(IMP.ModelObject):
         print("Keys", self.structure_elements.keys())
         return self.structure_elements
 
-    def setup_structure_element(self, coordinates, sec_struct, start_residue=0, polarity=1, offset=0, stride=None):
+    def setup_structure_element(self, coordinates, sec_struct, start_residue=0, polarity=1, offset=0, chain_id="A", stride=None):
 
         se_pi = IMP.Particle(self.model)
         se_hier = IMP.atom.Hierarchy.setup_particle(se_pi)
@@ -164,7 +164,8 @@ class SSEThread(IMP.ModelObject):
                                                         start_residue,
                                                         polarity,
                                                         len(coordinates),
-                                                        offset)
+                                                        offset,
+                                                        chain_id)
 
         if sec_struct=="H":
             IMP.atom.SecondaryStructureResidue.setup_particle(se_pi, 1, 0, 0)
