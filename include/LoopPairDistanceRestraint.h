@@ -97,7 +97,7 @@ class IMPTHREADINGEXPORT LoopPairDistanceRestraint : public Restraint {
 
   double get_pair_distance(ParticleIndex pa, ParticleIndex pb) const;
 
-  algebra::Vector3D get_cap_center(ParticleIndex p_sel) const;
+  //algebra::Vector3D get_cap_center(ParticleIndex p_sel) const;
 
   double unprotected_evaluate(DerivativeAccumulator *accum) const
       IMP_OVERRIDE;
