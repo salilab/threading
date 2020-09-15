@@ -255,7 +255,7 @@ class SSEThread(IMP.ModelObject):
         # Use numpy.where instead
         for s in self.structure_elements.keys():
             sr = self.start_res_list[s]#int(self.structure_elements[s].get_start_res())
-            if sr != 0: 
+            if sr[1] != 0: 
                 built_ids.append(s)
 
         if sort:
@@ -927,6 +927,14 @@ class SSEAdditionMover(IMP.threading.SSEThreadMover):
         self.structure_elements[numpy.randint(0,len(structure_elements))]
 
     def do_propose(self, new_start_res=None, seid=None):
+        '''
+        Propose a new start residue for a StructureElement.
+
+        If no start residue (new_start_res) is given, choose one at random from the system
+
+        If no StructureElement (seid) is given, choose one at random
+
+        '''
         # Get a random structure element that is not built
         if seid is None:
             rand_srs = list(self.structure_elements.keys())
@@ -958,7 +966,7 @@ class SSEAdditionMover(IMP.threading.SSEThreadMover):
         self.mod = True
         # Modify the loops table and start res list for the system
         self.system.add_se_to_loop_table(self.seid, new_start_res)
-        self.system.start_res_list[seid]=new_start_res
+        self.system.start_res_list[seid] = new_start_res
         
         # Change the start residue key on the SE
         se.set_start_res_key(new_start_res)
