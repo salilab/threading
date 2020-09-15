@@ -738,7 +738,6 @@ class SSEThread(IMP.ModelObject):
         return self.secrs
 
     def update_SECR_restraints(self):
-        
         try:
             n_secr = len(self.secrs)
         #if there are no secr restraints, then just exit
@@ -769,10 +768,10 @@ class SSEThread(IMP.ModelObject):
         # Place in here all items that should be updated each step. 
         self.update_SECR_restraints()
 
-    def add_SS_to_sequence(self, psipred):
+    def add_SS_to_sequence(self, psipred, chain):
         self.sequence_ss = {}
         for res in psipred.keys():
-            sys_part = IMP.atom.Selection(self.sequence_hierarchy, residue_index=res).get_selected_particle_indexes()[0]
+            sys_part = IMP.atom.Selection(self.sequence_hierarchy, residue_index=res, chain_id=chain).get_selected_particle_indexes()[0]
             IMP.atom.SecondaryStructureResidue.setup_particle(self.model, sys_part, psipred[res][0], psipred[res][1], psipred[res][2])
          
             self.sequence_ss[res] = psipred[res]
@@ -875,9 +874,12 @@ class CompletenessRestraint(IMP.Restraint):
 
 class SecondaryStructureParsimonyRestraint(IMP.Restraint):
     def __init__(self, system, psipred, evaluate_unbuilt=True):
+        # psipred is a list of tuples: (chain_id, psipred dictionary)
+        # psipred_dictionary is formatted as: { resnum:(frac_helix, frac_sheet, frac_coil), ... }
         self.system = system
-        #self.system.add_SS_to_ses(se_sec_struct)
-        self.system.add_SS_to_sequence(psipred)
+
+        for pp in psipred:
+            self.system.add_SS_to_sequence(pp[1], pp[0])
         self.evaluate_unbuilt=evaluate_unbuilt
         IMP.Restraint.__init__(self, self.system.model, "SecondaryStructureParsimonyRestraint")
 
