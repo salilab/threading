@@ -69,13 +69,13 @@ class SSEThread(IMP.ModelObject):
     def build_sequence_chains(self, sequences):
         # Given a list of (chain_id, fasta sequence) tuples, build the sequence chains
 
-        sse_res_id = 1
         for s in range(len(sequences)):
-            chain_id = sequences[0]
-            fasta = sequences[1]
+            chain_id = sequences[s][0]
+            fasta = sequences[s][1]
             new_seq_chain = IMP.atom.Chain.setup_particle(IMP.Particle(self.model), str(chain_id))
             self.sequence_hierarchy.add_child(new_seq_chain)
 
+            sse_res_id = 1
             for i in range(len(fasta)):
                 pr = IMP.Particle(self.model)
                 # Setup residue/mass/xyzr
@@ -306,7 +306,7 @@ class SSEThread(IMP.ModelObject):
 
         loops = {}
 
-        for chain_id in sorted_chain_ses_ids.keys():
+        for chain_id in sorted_chain_ses_ids:
             sorted_ses_ids = sorted_chain_ses_ids[chain_id]
           
             # The first loop in a chain always starts at 1 and has no SE N-terminal to it
@@ -912,11 +912,12 @@ class SSEAdditionMover(IMP.threading.SSEThreadMover):
         @param structure_elements :: A dictionary of structure elements with key - SEID
         '''
         se_pis = [structure_elements[seid].get_particle_index() for seid in structure_elements.keys()]
-        #se_pis = [se.get_particle_index() for se in structure_elements]
+        
         IMP.threading.SSEThreadMover.__init__(self, 
                 system.model, 
                 se_pis,
                 system.sequence_hierarchy.get_particle_index())
+        
         self.structure_elements = structure_elements
         self.system = system
 
@@ -924,7 +925,9 @@ class SSEAdditionMover(IMP.threading.SSEThreadMover):
         return self.structure_elements[self.seid]
 
     def get_random_structure_element(self):
-        self.structure_elements[numpy.randint(0,len(structure_elements))]
+        seids = self.structure_elements.keys()
+        ri = numpy.randint(0,len(seids))
+        self.structure_elements[seids[ri]]
 
     def do_propose(self, new_start_res=None, seid=None):
         '''
@@ -943,20 +946,19 @@ class SSEAdditionMover(IMP.threading.SSEThreadMover):
             for seid in rand_srs:
                 se = self.structure_elements[seid]
                 sr = se.get_start_res()
-                #print("  ", seid, sr)
                 if sr == 0:
                     break
 
-                # If none are zero, we can't add one.  Retnurn nothing.
+                # If none are zero, we can't add one.  Return nothing.
                 if seid == rand_srs[-1]:
                     return IMP.core.MonteCarloMoverResult([se.get_particle_index()], 0.0)
 
-        self.seid = seid # Store the seid in a persisten variable
+        self.seid = seid # Store the seid in a persistent variable
         se = self.structure_elements[self.seid]
 
         # Pick a random available start residue and change the SE start_res to that
         if new_start_res is None:
-            available_start_res = self.system.get_available_start_residues(seid)
+            available_start_res = self.system.get_available_start_residues(self.seid)
             if len(available_start_res)==0:
                 self.mod = False
                 return IMP.core.MonteCarloMoverResult([se.get_particle_index()], 0.0)
@@ -966,10 +968,11 @@ class SSEAdditionMover(IMP.threading.SSEThreadMover):
         self.mod = True
         # Modify the loops table and start res list for the system
         self.system.add_se_to_loop_table(self.seid, new_start_res)
-        self.system.start_res_list[seid] = new_start_res
+        self.system.start_res_list[self.seid] = new_start_res
         
-        # Change the start residue key on the SE
-        se.set_start_res_key(new_start_res)
+        # Change the start residue and chain keys on the SE
+        se.set_start_res_key(new_start_res[1])
+        se.set_chain_key(new_start_res[0])
         self.new_start_res = new_start_res
 
         # Update the model
@@ -1023,15 +1026,18 @@ class SSEDeletionMover(IMP.threading.SSEThreadMover):
         for seid in rand_srs:
             se = self.structure_elements[seid]
             sr = se.get_start_res()
+
+            # Find the first SE that is not built
             if sr != 0:
                 break
 
-            # If none are zero, we can't add one.  Retnurn nothing.
+            # If none are unbuilt, we can't add one.  Retnurn nothing.
             if seid == rand_srs[-1]:
                 return IMP.core.MonteCarloMoverResult([se.get_particle_index()], 0.0)
 
         self.seid = seid
         self.old_start_res = se.get_start_res()
+        self.old_chain = se.get_chain() # Don't need to use this since we don't change the chain
         se_pix = se.get_particle_index()
         
         # Change sequence coordinates to zero and set start_res_key of SE to zero
@@ -1039,7 +1045,7 @@ class SSEDeletionMover(IMP.threading.SSEThreadMover):
         se.set_start_res_key(0)
         self.new_start_res = 0
 
-        self.system.start_res_list[self.seid] = 0
+        self.system.start_res_list[self.seid] = (self.old_chain, 0)
 
         # Modify the loops table for the system
         self.system.remove_se_from_loop_table(self.seid)
@@ -1047,21 +1053,18 @@ class SSEDeletionMover(IMP.threading.SSEThreadMover):
 
         return IMP.core.MonteCarloMoverResult([se.get_particle_index()], 1.0)
 
-
     def do_reject(self):
         se = self.get_se(self.seid)
         se_pix = se.get_particle_index() 
 
         # Reset the loops table, reset start_Res_key and transform the coordinates back.
-        self.system.add_se_to_loop_table(self.seid, self.old_start_res)
-        self.system.start_res_list[self.seid] = self.old_start_res
+        self.system.add_se_to_loop_table(self.seid, (self.old_chain, self.old_start_res))
+        self.system.start_res_list[self.seid] = (self.old_chain, self.old_start_res)
         se.set_start_res_key(self.old_start_res)
         
         # transform the coordinates back to the model that we deleted
         self.transform_coordinates(se_pix)
         self.system.update_system()
-
-
 
 class SSEShiftMover(IMP.threading.SSEThreadMover):
     '''
@@ -1069,11 +1072,12 @@ class SSEShiftMover(IMP.threading.SSEThreadMover):
     '''
     def __init__(self, system, structure_elements, max_disp=None):
         se_pis = [structure_elements[seid].get_particle_index() for seid in structure_elements.keys()]
-        #se_pis = [se.get_particle_index() for se in structure_elements]
+        
         IMP.threading.SSEThreadMover.__init__(self,
                 system.model,
                 se_pis,
                 system.sequence_hierarchy.get_particle_index())
+        
         self.structure_elements = structure_elements
         self.system = system
         self.max_disp = max_disp
@@ -1082,17 +1086,17 @@ class SSEShiftMover(IMP.threading.SSEThreadMover):
         return self.structure_elements[seid]
 
     def set_max_disp(self, max_disp):
-        self.max_disp = 10
+        self.max_disp = max_disp
 
     def do_propose(self):
-
         # Find random built SE
         rand_srs = list(self.system.get_built_structure_element_ids())
         random.shuffle(rand_srs)
         
         for seid in rand_srs:
             se = self.structure_elements[seid]
-            sr = se.get_start_res()
+
+            # Find a built SE
             if sr != 0:
                 break
 
@@ -1101,18 +1105,19 @@ class SSEShiftMover(IMP.threading.SSEThreadMover):
                 self.seid=-1
                 return IMP.core.MonteCarloMoverResult([se.get_particle_index()], 0.0)
         
-        
         self.seid = seid
-        self.old_start_res = sr
+        self.old_start_res = se.get_start_res()
+        self.old_chain = se.get_chain()
         se_pix = se.get_particle_index()
-
         
-        # find start residues within this loop
-        available_start_res = self.system.get_available_start_residues(self.seid, same_loop=True)
+        # find start residues within this loop (if true)
+        available_start_res = self.system.get_available_start_residues(self.seid, same_loop=self.same_loop)
 
         lasr = len(available_start_res)
+
+        # Parse available start res by those only within N residues in the same chain
         if self.max_disp is not None:
-            available_start_res = [i for i in available_start_res if abs(i-sr)<=self.max_disp]
+            available_start_res = [i for i in available_start_res if (sr[0]==self.old_chain and abs(i-sr[1])<=self.max_disp)]
        
         if len(available_start_res) == 0:
             print("ShiftMover WARNING: No available residues returned for this loop. Suspicious.", lasr)
@@ -1123,7 +1128,7 @@ class SSEShiftMover(IMP.threading.SSEThreadMover):
         self.new_start_res = new_start_res
 
         # Modify the loops table for the system
-        self.system.remove_se_from_loop_table(self.seid)#modify_loop_table(self.seid, new_start_res)
+        self.system.remove_se_from_loop_table(self.seid)
         
         # Zero the coordinates
         self.zero_coordinates(se_pix)
@@ -1132,9 +1137,10 @@ class SSEShiftMover(IMP.threading.SSEThreadMover):
         self.system.add_se_to_loop_table(self.seid, new_start_res)
         
         # Transform coordinates and update tables
-        se.set_start_res_key(new_start_res)
+        se.set_start_res_key(new_start_res[1])
+        se.set_chain_key(new_start_res[0])
         self.transform_coordinates(se_pix)
-        self.system.start_res_list[self.seid]=new_start_res
+        self.system.start_res_list[self.seid] = new_start_res
         self.system.update_system()
 
         return IMP.core.MonteCarloMoverResult([se.get_particle_index()], 1.0)
@@ -1148,16 +1154,17 @@ class SSEShiftMover(IMP.threading.SSEThreadMover):
         
         # Reset the loops table
         self.system.remove_se_from_loop_table(self.seid)
-        self.system.start_res_list[self.seid]=self.old_start_res
+        self.system.start_res_list[self.seid] = (self.old_chain, self.old_start_res)
         
         # If new start res is not zero, then zero out the coordiantes we added
         if new_sr != 0:
             self.zero_coordinates(se_pix)
         
-        self.system.add_se_to_loop_table(self.seid, self.old_start_res)
+        self.system.add_se_to_loop_table(self.seid, (self.old_chain, self.old_start_res))
 
         # Set back the old new start residue
         se.set_start_res_key(self.old_start_res)
+        se.set_chain_key(self.old_chain)
         
         # Transform the old coordinates back
         if self.old_start_res != 0:
