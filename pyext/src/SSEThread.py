@@ -9,6 +9,7 @@ import random
 import numpy
 import math
 import operator
+import os
 from copy import deepcopy
 
 class Loop():
@@ -47,14 +48,26 @@ class Loop():
             return False
 
 class SSEThread(IMP.ModelObject):
-    def __init__(self, sequences=[], max_res_dist=4.0, se_clash_dist=4.0):
+    def __init__(self, sequences={}, max_res_dist=4.0, se_clash_dist=4.0):
+        '''
+        @param sequences :: dictionary of sequences {chain_id:FASTA} or list of tuples [(chain_id, FASTA)]
+        @param max_res_dist :: The maximum distance-per-residue (in angstroms) for computing loop lengths
+        @param se_clash_dist :: Minimum distance that two SEs can be to each other (in angstroms)
+        '''
         self.model = IMP.Model()
-        self.sequences = sequences # list of fastas
         self._setup_SSE_system()
         self.max_res_dist = max_res_dist
         self.se_clash_dist = se_clash_dist
-        if len(sequences) > 0:
+
+        # if sequences is a list, make it a dictionary
+        if isinstance(sequences, list):
+            self.sequences = {}
+            for chain in sequences:
+                self.sequences[chain[0]]=chain[1]
+
+        if len(sequences.keys()) > 0:
             self.build_sequence_chains(sequences)
+        
         self.system_xyzs = [IMP.core.XYZ(p) for p in IMP.atom.Selection(self.sequence_hierarchy).get_selected_particles()]
     
     def _setup_SSE_system(self):
@@ -69,9 +82,8 @@ class SSEThread(IMP.ModelObject):
     def build_sequence_chains(self, sequences):
         # Given a list of (chain_id, fasta sequence) tuples, build the sequence chains
 
-        for s in range(len(sequences)):
-            chain_id = sequences[s][0]
-            fasta = sequences[s][1]
+        for chain_id in sequences.keys():#range(len(sequences)):
+            fasta = sequences[chain_id]
             new_seq_chain = IMP.atom.Chain.setup_particle(IMP.Particle(self.model), str(chain_id))
             self.sequence_hierarchy.add_child(new_seq_chain)
 
@@ -154,7 +166,7 @@ class SSEThread(IMP.ModelObject):
 
             se_ix+=2
 
-        print("Keys", self.structure_elements.keys(), self.structure_elements.get_chain())
+        #print("Keys", self.structure_elements.keys(), self.structure_elements.get_chain())
         return self.structure_elements
 
     def setup_structure_element(self, coordinates, sec_struct, start_residue=0, polarity=1, offset=0, chain_id="A", stride=None):
@@ -175,7 +187,7 @@ class SSEThread(IMP.ModelObject):
             se_hier.add_child(hp)
 
             if stride is not None:
-                IMP.atom.SecondaryStructureResidue.setup_particle(np, stride[c][0], stride[c][1], stride[c][2])
+                IMP.atom.SecondaryStructureResidue.setup_particle(np, stride[c][0][0], stride[c][0][1], stride[c][0][2])
 
         se = IMP.threading.StructureElement.setup_particle(self.model, 
                                                         se_pi.get_index(),
@@ -878,8 +890,9 @@ class SecondaryStructureParsimonyRestraint(IMP.Restraint):
         # psipred_dictionary is formatted as: { resnum:(frac_helix, frac_sheet, frac_coil), ... }
         self.system = system
 
-        for pp in psipred:
-            self.system.add_SS_to_sequence(pp[1], pp[0])
+        for c in psipred.keys():
+            pp = psipred[c]
+            self.system.add_SS_to_sequence(pp, c)
         self.evaluate_unbuilt=evaluate_unbuilt
         IMP.Restraint.__init__(self, self.system.model, "SecondaryStructureParsimonyRestraint")
 
@@ -1442,3 +1455,127 @@ class MonteCarlo():
             self.movers[m].do_reject()
 
 
+def read_config_file(config_file, config_dict):
+    # Given a configuration file, returns a dictionary of parameters
+    config_path = os.path.realpath(config_file)
+    
+    f = open(config_file, "r")
+    
+    for line in f.readlines():    
+        # Burn any comment lines or blank lines
+        if line.strip()=="" or line[0]=="#":
+            continue
+
+        fields = line.split()
+
+        # Add sequences to system
+        if fields[0] == "sequence":
+            if len(fields[1])!=1:
+                raise Exception("Chain ID must be a single letter:", fields[1])
+                exit()
+
+            if "sequence" not in config_dict.keys:
+                config_dict["sequence"]=[]
+            config_dict["sequence"].append((fields[1], fields[2]))
+
+        elif fields[0] == "localization_table":
+            path = config_path+"/"+fields[1]
+            # should check if file exists
+            if not os.path.isfile(path):
+                raise Exception("Localization table file", path, "does not exist")
+            config_dict["localization_table"] = path
+
+        elif fields[0] == "pdb_file":
+            path = config_path+"/"+fields[1]
+            # should check if file exists
+            if not os.path.isfile(path):
+                raise Exception("PDB file", path, "does not exist")
+
+            if "pdb_files" not in config_dict.keys():
+                config_dict["pdb_files"]=[]
+            config_dict["pdb_files"].append(path)
+
+        elif fields[0] == "crosslink_dataset":
+            path = config_path+"/"+fields[1]
+            if not os.path.isfile(path):
+                raise Exception("Crosslink file", path, "does not exist")
+
+            if "crosslink_dataset" not in config_dict.keys():
+                config_dict["crosslink_dataset"]=[]
+            config_dict["crosslink_dataset"].append((path, float(fields[2]), float(fields[3]), float(fields[4])))
+
+        else:
+            # Everything else is a single parameter/pair
+            # convert numbers to floats (will need to int all of the integer parameters in the main code)
+            try:
+                val = float(fields[1])
+            except:
+                val = fields[1]
+            config_dict[fields[0]] = val
+
+        return config_dict
+
+def is_config_dict_complete(config_dict):
+    # Does this configuration dictionary have all of the required elements to run a simulation?
+
+    # Need sequences of some sort
+    if "sequence" not in config_dict.keys():
+        return False
+    if len(config_dict["sequence"]) == 0:
+        return False
+
+    if "pdb_file" not in config_dict.keys() or "localization_table" not in config_dict.keys():
+        return False
+
+    return True
+
+usage = '''
+SSEThread command-line usage:
+
+python SSEThread.py mode [args]
+
+Available modes: setup sample anaysis
+
+# Setup:
+python SSEThread.py setup -c config_file -o output_folder
+
+# Running
+python SSEThread.py sample -c config_file [-b]
+-b : benchmark - run 1000 steps to time a sampling run
+
+# Analysis
+python SSEThread.py analysis -o output_folder [-t truth.pdb]
+'''
+
+default_configuration_file = os.path.dirname(os.path.realpath(__file__))+"/default_configuration.dat"
+
+# Scripts for setting up and running the system
+if __name__ == "__main__":
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option("-c", "--config", dest="config_file", type="string", help="Path to configuration file")
+    parser.add_option("-b", "--benchmark", action="store_true", dest="benchmark", default=False, help="Run short benchmark for timing Only used with 'sampling' mode")
+    parser.add_option("-o", "--output", dest="output_folder", type="string", help="Directory to put/read output for this system.")
+    parser.add_option("-t", "--truth", dest="truth", type="string", default=None, help="Reference PDB file for comparing SSEThread results.")
+    (options, args) = parser.parse_args(sys.argv[2:])
+    
+    config_dict = read_configuration_file(default_configuration_file, config_dict = {})
+
+    mode = sys.argv[1].lower()
+
+    if mode == "setup":
+        configuration = read_config_file(options.config_file, config_dict=config_dict)
+        setup_ssethread(config_dict=configuration, output_directory=options.output_folder)
+
+    elif mode == "sampling":
+        configuration = read_config_file(options.config_file, config_dict=config_dict)
+        sample_ssethread(config_dict=configuration, output_directory=options.output_folder, benchmark=options.benchmark)
+
+    elif mode == "analysis":
+        analyze_ssethread(output_directory=options.output_folder, truth=options.truth)
+
+    else:
+        print("Unknown mode")
+        print("")
+        print(usage)
+    
