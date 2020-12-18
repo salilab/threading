@@ -27,16 +27,9 @@ fi
 bash miniconda.sh -b -p ${conda_dir}
 export PATH=${conda_dir}/bin:$PATH
 conda update --yes -q conda
-conda create --yes -q -n python${python_version} -c salilab python=${python_version} pip nose imp-nightly gxx_linux-64 eigen swig cmake protobuf matplotlib
+conda create --yes -q -n python${python_version} -c salilab python=${python_version} pip imp-nightly gxx_linux-64 eigen swig cmake protobuf matplotlib
 source activate python${python_version}
-pip install coverage
-
-source ${CONDA_PREFIX}/etc/conda/activate.d/activate-gcc_linux-64.sh
-source ${CONDA_PREFIX}/etc/conda/activate.d/activate-gxx_linux-64.sh
-
-# IMP tests use sys.argv[0] to determine their location, which won't work if
-# we use nosetests, so add a workaround
-ln -sf $(which nosetests) ${cur_dir}/test/
+pip install pytest-cov coverage
 
 cd ${cur_dir}
 
