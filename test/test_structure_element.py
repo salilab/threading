@@ -14,7 +14,7 @@ class Tests(IMP.test.TestCase):
 
     def setup_structure_element(self, p, start_res, polarity, length, offset, nres=10):
         model = p.get_model()
-        IMP.threading.StructureElement.setup_particle(p, start_res, polarity, length, offset)
+        IMP.threading.StructureElement.setup_particle(p, start_res, polarity, length, offset, 'A')
         h = IMP.atom.Hierarchy.setup_particle(p)
         se = IMP.threading.StructureElement(p) 
 
