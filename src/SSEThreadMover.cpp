@@ -50,10 +50,14 @@ void SSEThreadMover::transform_coordinates(ParticleIndex se_pi){
 
   // Create a selection to find the residues we wish to 
   // add these coordinates to.
-  atom::Selection sel(h);
+  // get the chain id of the SecondaryElement
+ std::string se_chain = se.get_chain();
+
+ atom::Selection sel(h);
  
   sel.set_residue_indexes(se.get_resindex_list());
-  
+  // assign the change to the correct chain 
+  sel.set_chain_id(se_chain);
   // Select these particles
   ParticlesTemp new_resis = sel.get_selected_particles();
   
@@ -78,7 +82,13 @@ void SSEThreadMover::zero_coordinates(ParticleIndex se_pi){
   threading::StructureElement se(get_model(), se_pi);
   atom::Hierarchy h(get_model(), s_hier_pi_);
   atom::Selection sel(h);
+  std::string se_chain = se.get_chain();
+  
   sel.set_residue_indexes(se.get_resindex_list());
+
+  // assign the change to the correct chain
+  sel.set_chain_id(se_chain);
+
   ParticlesTemp oldsel = sel.get_selected_particles();
   for (unsigned int i=0; i<oldsel.size();i++){
     core::XYZ coord(oldsel[i]);

@@ -75,9 +75,10 @@ double SecondaryStructureParsimonyRestraint::unprotected_evaluate(DerivativeAccu
     std::vector<float> se_prob = ses_ss_probs[j];
     float dot = 0;
     for (int k = 0; k < 3; k++){
+        //std::cout << "seq_prob " << seq_prob[k] << " se_prob " << se_prob[k] << std::endl;
       dot += seq_prob[k] * se_prob[k];
     }
-    score += -1 * log(dot);
+    score += -1 * log(dot+0.0001); // to avoid log(0) problem
     //std::cout << "RES# " << j << " (" << se_prob[0] << se_prob[1] << se_prob[2] << "), (" << seq_prob[0] << seq_prob[1] << seq_prob[2] << ") " << dot << std::endl;
 
   }

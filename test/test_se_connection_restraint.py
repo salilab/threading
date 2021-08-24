@@ -34,13 +34,15 @@ def setup_structural_element(root_hier, element, max_translation=1):
         hp = IMP.atom.Hierarchy.setup_particle(np)
         xyz = IMP.core.XYZ.setup_particle(np)
         #m = IMP.atom.Mass.setup_particle(root_hier.get_model(), np)
-        xyz.set_coordinates(IMP.core.XYZ(p).get_coordinates())
+        coord = IMP.core.XYZ(p).get_coordinates()
+        print("coordinates", coord)
+        xyz.set_coordinates(coord)
         h.add_child(hp)
         #print(IMP.core.XYZ(p).get_coordinates())
 
     #print(xyz)
 
-    IMP.threading.StructureElement.setup_particle(root_hier.get_model(), pi.get_index(), element[0]-4, 1, element[1], 0)
+    IMP.threading.StructureElement.setup_particle(root_hier.get_model(), pi.get_index(), element[0]-4, 1, element[1], 0, 'A')
     #se = se.setup_particle(p, element[0], 1, element[1], 0)
     
     # Set up this element as a helix
@@ -49,7 +51,6 @@ def setup_structural_element(root_hier, element, max_translation=1):
     se = IMP.threading.StructureElement(pi)
     se.set_keys_are_optimized(True)
 
-    print(se.get_max_res())
 
     #print("XXXxx", IMP.core.XYZ(root_hier.get_model(), h.get_children()[0].get_particle_index()), h.get_children())
     return se
@@ -114,7 +115,7 @@ psipred_slope = 0.1
 m = IMP.Model()
 ######################################
 DATADIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'input'))
-pdbfile = os.path.join(DATADIR, "pdb2lv9.ent")
+pdbfile = os.path.join(DATADIR, "pdb2lv9_A.ent")
 root_hier = IMP.atom.read_pdb(pdbfile, m)
 #IMP.atom.show_molecular_hierarchy(root_hier)
 
@@ -138,7 +139,7 @@ seq_chain = IMP.atom.Chain.setup_particle(IMP.Particle(m), "S")
 root_hier.add_child(seq_chain)
 for i in range(len(seq)):
     res = IMP.atom.Residue.setup_particle(IMP.Particle(m),
-                                                    IMP.pmi.tools.get_residue_type_from_one_letter_code(seq[i]),
+                                                    IMP.pmi.alphabets.amino_acid.get_residue_type_from_one_letter_code(seq[i]),
                                                     i+1)
 
     IMP.atom.Mass.setup_particle(res.get_particle(), IMP.atom.get_mass(res.get_residue_type()))
@@ -188,7 +189,7 @@ for s in Se_pos:
     for met in met_particles:
         r = setup_pair_restraint(met, p, Se_dist)
         rs.append(r)
-    mr = IMP.core.MinimumRestraint(1, rs, name="SeMetRestraint %1%") 
+    mr = IMP.core.MinimumRestraint(1, rs, "SeMetRestraint %1%") 
     rests.append(mr)
 
 # MODELLER CA-CA Restraint
@@ -209,7 +210,12 @@ for i in range(len(se)-1):
 
 for s in se_pairs:
     r = add_SECR(s[0], s[1])
-    print(s, "NRES:", r.get_number_of_residues(), r.get_model_distance(), r.get_max_distance(), r.unprotected_evaluate(None))
+    print(IMP.atom.Hierarchy(m, s[0]).get_children())
+    print(s, "NRES:",)
+    print( r.get_number_of_residues(),)
+    print(r.get_model_distance(),)
+    print(r.get_max_distance(),)
+    print(r.unprotected_evaluate(None))
     rests.append(r)
     se_rests.append(r)
 
