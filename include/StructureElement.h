@@ -43,7 +43,7 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
                                 double polarity = 1,
                                 double length = 0,
                                 double offset = 0,
-                                std::string chain_id = 0) {
+                                std::string chain_id = "") {
 
     ParticleIndex pi_ = pi;
 
@@ -71,6 +71,21 @@ class IMPTHREADINGEXPORT StructureElement : public Decorator {
                         int, length, 
                         int, offset,
                         std::string, chain_id);
+  IMP_DECORATOR_SETUP_4(StructureElement,
+                        int, start_res,
+                        int, polarity,
+                        int, length,
+                        int, offset);
+  IMP_DECORATOR_SETUP_3(StructureElement,
+                        int, start_res,
+                        int, polarity,
+                        int, length);
+  IMP_DECORATOR_SETUP_2(StructureElement,
+                        int, start_res,
+                        int, polarity);
+  IMP_DECORATOR_SETUP_1(StructureElement,
+                        int, start_res);
+  IMP_DECORATOR_SETUP_0(StructureElement);
 
   static FloatKey get_start_res_key();
   static FloatKey get_polarity_key();
