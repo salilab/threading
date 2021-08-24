@@ -226,10 +226,3 @@ for i in range(22):
     se[0].set_start_res_key(se[0].get_start_res()+1)
     r = se_rests[0]
     print("SECR:", se[0].get_start_res(), se[1].get_start_res(), r.get_number_of_residues(), r.get_model_distance(), r.get_max_distance(), r.unprotected_evaluate(None))
-
-
-
-exit()
-
-
-
