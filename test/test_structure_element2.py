@@ -72,9 +72,9 @@ class Tests(IMP.test.TestCase):
         p = IMP.Particle(m)
         se = self.setup_structure_element(p, 2, 1, 5, 0)
 
-        self.assertEqual(se.get_resindex_list(), [2,3,4,5,6])
+        self.assertEqual(list(se.get_resindex_list()), [2,3,4,5,6])
         se.flip_polarity_key()
-        self.assertEqual(se.get_resindex_list(), [6,5,4,3,2])
+        self.assertEqual(list(se.get_resindex_list()), [6,5,4,3,2])
 
 if __name__ == '__main__':
     IMP.test.main()
