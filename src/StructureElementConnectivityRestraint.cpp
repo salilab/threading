@@ -18,7 +18,7 @@ StructureElementConnectivityRestraint::StructureElementConnectivityRestraint(Mod
                     ParticleIndex b,
                     float n_sds,
                     std::string name)
-    : Restraint(m, "SEConnectivityRestraint%1%"), score_func_(score_func), a_(a), b_(b), n_sds_(n_sds) {}
+    : Restraint(m, name), score_func_(score_func), a_(a), b_(b), n_sds_(n_sds) {}
 
 /* Apply the pair score to each particle pair listed in the container.
  */

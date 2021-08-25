@@ -21,7 +21,7 @@ SecondaryStructureParsimonyRestraint::SecondaryStructureParsimonyRestraint(Model
                     ParticleIndex b,
                     float c,
                     std::string name)
-    : Restraint(m, "SecondaryStructureParsimonyRestraint%1%"), ses_(ses), b_(b), c_(c){
+    : Restraint(m, name), ses_(ses), b_(b), c_(c){
       helix_prob_ = 0;
       coil_prob_ = 1;
       sheet_prob_ = 0;
@@ -41,10 +41,10 @@ double SecondaryStructureParsimonyRestraint::unprotected_evaluate(DerivativeAccu
   //std::vector<std::vector<float> > ses_ss_probs = get_se_sequence_probabilities();
 
   // Initialize the SE secondary structure probability array to the default value
-  std::vector<std::vector<float> > ses_ss_probs(nres, std::vector<float>(3,1)={helix_prob_,sheet_prob_,coil_prob_});
+  std::vector<std::vector<double> > ses_ss_probs(nres, std::vector<double>(3,1)={helix_prob_,sheet_prob_,coil_prob_});
 
   // Populate the SE sec st array with covered SE residues
-  for (int nse = 0; nse < ses_.size(); nse++){
+  for (unsigned nse = 0; nse < ses_.size(); nse++){
 
     // Get chain
     std::string chain = threading::StructureElement(get_model(),ses_[nse]).get_chain();
@@ -55,7 +55,7 @@ double SecondaryStructureParsimonyRestraint::unprotected_evaluate(DerivativeAccu
         // Second, get the probabilities for this SE
         Floats ses_ss_prob = atom::SecondaryStructureResidue(get_model(), ses_[nse]).get_all_probabilities();
 
-        for(int i = 0; i < resinds.size(); i++){
+        for(unsigned i = 0; i < resinds.size(); i++){
       
           for (int k = 0; k < 3; k++){
             ses_ss_probs[resinds[i]-1][k] = ses_ss_prob[k];
@@ -72,7 +72,7 @@ double SecondaryStructureParsimonyRestraint::unprotected_evaluate(DerivativeAccu
   for (int j = 0; j < nres; j++){
 
     Floats seq_prob = atom::SecondaryStructureResidue(get_model(), resis[j].get_particle_index()).get_all_probabilities();
-    std::vector<float> se_prob = ses_ss_probs[j];
+    std::vector<double> se_prob = ses_ss_probs[j];
     float dot = 0;
     for (int k = 0; k < 3; k++){
         //std::cout << "seq_prob " << seq_prob[k] << " se_prob " << se_prob[k] << std::endl;

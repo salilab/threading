@@ -20,7 +20,7 @@ ConditionalPairRestraint::ConditionalPairRestraint(Model *m, UnaryFunction *scor
                     ParticleIndex b,
                     double dpr,
                     std::string name)
-    : Restraint(m, "ConditionalPairRestraint%1%"), score_func_(score_func), a_(a), b_(b), dpr_(dpr) {}
+    : Restraint(m, name), score_func_(score_func), a_(a), b_(b), dpr_(dpr) {}
 
 /* Apply the pair score to each particle pair listed in the container.
  */

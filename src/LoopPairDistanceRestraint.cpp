@@ -21,14 +21,13 @@ LoopPairDistanceRestraint::LoopPairDistanceRestraint(Model *m, UnaryFunction *sc
                     ParticleIndex b,
                     double n_sds,
                     std::string name)
-    : Restraint(m, "LoopPairDistanceRestraint%1%"),
+    : Restraint(m, name),
       score_func_(score_func),
       a_(a),
       b_(b),
       n_sds_(n_sds),
       amb_rest_(false){
-
-  int i  = atom::Residue(get_model(), a_).get_index();
+  // int i  = atom::Residue(get_model(), a_).get_index();
 }
 
 
@@ -38,7 +37,7 @@ LoopPairDistanceRestraint::LoopPairDistanceRestraint(Model *m, UnaryFunction *sc
                     double n_sds,
                     double distance_threshold,
                     std::string name):
-  Restraint(m, "LoopPairDistanceRestraint%1%"),
+  Restraint(m, name),
   score_func_(score_func),
   n_sds_(n_sds),
   distance_threshold_(distance_threshold),
@@ -80,7 +79,6 @@ double LoopPairDistanceRestraint::calc_sphere_cap_distance(float R, float d, flo
   
   // For debugging.  If DIST == NaN, this trips.
   if (dist!=dist){
-   int i=1;  
    std::cout << "The sphere cap distance is undefined.  There is some error in the LoopPairDistanceRestraint calculation" << std::endl;
    //std::cout << "    NANNAN-R,d,a,RR,dd: " << R << ", " << d << ", " << alpha << " " << R*R << " " << d*d*(sina*sina - 1 ) << " " << sina << " || " << dist <<std::endl;
   }
@@ -106,8 +104,7 @@ Particles LoopPairDistanceRestraint::get_closest_built_residue_particles(Particl
   atom::Residue r = atom::Residue(get_model(), pi);
   atom::Hierarchy nextres;
   atom::Hierarchy prevres;
-  int ri = r.get_index();
-  
+
   // Get the chain of this residue
   atom::Hierarchy res(get_model(), pi);
   atom::Hierarchy seq_chain = res.get_parent();
@@ -202,8 +199,6 @@ double LoopPairDistanceRestraint::get_pair_distance(ParticleIndex pa,
 
   // Determine XL evaluation distance in all circumstances...this could be written much better
   float distance = 1000;  // model distance
-  float loop_dist;
-  float new_dist;
 
   // If both residues are structured, computing the model distance is easy
   

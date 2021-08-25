@@ -31,7 +31,7 @@ class IMPTHREADINGEXPORT StructureElementMover : public IMP::core::MonteCarloMov
   int pct_offset_ = 30; // percentage of time to try an offset move
   int pct_length_ = 30; // percentage of time to try a length move
 
-  void initialize(Model *m, ParticleIndex pi, ParticleIndex s_hier_pi);
+  void initialize(ParticleIndex pi, ParticleIndex s_hier_pi);
 
  public:
 

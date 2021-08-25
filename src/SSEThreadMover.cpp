@@ -17,14 +17,14 @@ std::string get_structure_element_mover_name() {
 }
 }
 
-void SSEThreadMover::initialize(Model *m, ParticleIndexes se_pis, ParticleIndex s_hier_pi) {
+void SSEThreadMover::initialize(ParticleIndexes se_pis, ParticleIndex s_hier_pi) {
   se_pis_ = se_pis;
   s_hier_pi_ = s_hier_pi;
 }
 
 SSEThreadMover::SSEThreadMover(Model *m, ParticleIndexes se_pis, ParticleIndex s_hier_pi)
     : IMP::core::MonteCarloMover(m, get_structure_element_mover_name()) {
-  initialize(m, se_pis, s_hier_pi);
+  initialize(se_pis, s_hier_pi);
 }
 
 IMP::core::MonteCarloMoverResult SSEThreadMover::do_propose() {

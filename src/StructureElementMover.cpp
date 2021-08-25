@@ -16,7 +16,7 @@ std::string get_structure_element_mover_name(Model *m, ParticleIndex pi) {
 }
 }
 
-void StructureElementMover::initialize(Model *m, ParticleIndex pi, ParticleIndex s_hier_pi) {
+void StructureElementMover::initialize(ParticleIndex pi, ParticleIndex s_hier_pi) {
 
   IMP_USAGE_CHECK(StructureElement().get_is_setup(get_model(), pi), "Particle is not set up as a StructureElement");
   pi_ = pi;
@@ -26,7 +26,7 @@ void StructureElementMover::initialize(Model *m, ParticleIndex pi, ParticleIndex
 
 StructureElementMover::StructureElementMover(Model *m, ParticleIndex pi, ParticleIndex s_hier_pi)
     : IMP::core::MonteCarloMover(m, get_structure_element_mover_name(m, pi)) {
-  initialize(m, pi, s_hier_pi);
+  initialize(pi, s_hier_pi);
 }
 
 IMP::core::MonteCarloMoverResult StructureElementMover::do_propose() {

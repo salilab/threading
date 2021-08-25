@@ -42,7 +42,7 @@ class IMPTHREADINGEXPORT SecondaryStructureParsimonyRestraint : public Restraint
 
   double unprotected_evaluate(DerivativeAccumulator *accum) const
       IMP_OVERRIDE;
-  ModelObjectsTemp do_get_inputs() const;
+  ModelObjectsTemp do_get_inputs() const IMP_OVERRIDE;
   IMP_OBJECT_METHODS(SecondaryStructureParsimonyRestraint);
 
 void set_baseline_ss_probabilities(Float a, Float b, Float c) {

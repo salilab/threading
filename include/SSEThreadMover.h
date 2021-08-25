@@ -43,7 +43,7 @@ class IMPTHREADINGEXPORT SSEThreadMover : public IMP::core::MonteCarloMover {
   ParticleIndexes se_pis_;     // Structure Element particle indexes
   ParticleIndex s_hier_pi_;  // Sequence root hierarchy node particle index
 
-  void initialize(Model *m, ParticleIndexes se_pis, ParticleIndex s_hier_pi);
+  void initialize(ParticleIndexes se_pis, ParticleIndex s_hier_pi);
 
  public:
 

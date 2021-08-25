@@ -53,20 +53,19 @@ IMPTHREADING_BEGIN_NAMESPACE
 
 */
 class IMPTHREADINGEXPORT LoopPairDistanceRestraint : public Restraint {
+  IMP::PointerMember<UnaryFunction> score_func_;
   ParticleIndex a_;
   ParticleIndex b_;
+  double n_sds_;
+  double distance_threshold_;
+  bool amb_rest_ = false;
+
   ParticleIndexes as_;
   ParticleIndexes bs_;
 
-  bool amb_rest_ = false;
-
-  double n_sds_;
-  double distance_threshold_;
   // Mapping chain, residue to endpoints
   mutable boost::unordered_map<ParticleIndex, ParticlesTemp> map_endpoints_;
   
-  IMP::PointerMember<UnaryFunction> score_func_;
-
  public:
   //! Create the restraint.
   /** Restraints should store the particles they are to act on,
@@ -102,7 +101,7 @@ class IMPTHREADINGEXPORT LoopPairDistanceRestraint : public Restraint {
   double unprotected_evaluate(DerivativeAccumulator *accum) const
       IMP_OVERRIDE;
 
-  ModelObjectsTemp do_get_inputs() const;
+  ModelObjectsTemp do_get_inputs() const IMP_OVERRIDE;
   IMP_OBJECT_METHODS(LoopPairDistanceRestraint);
 };
 

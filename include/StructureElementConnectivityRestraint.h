@@ -25,10 +25,10 @@ IMPTHREADING_BEGIN_NAMESPACE
 // Particle b can be updated.
 
 class IMPTHREADINGEXPORT StructureElementConnectivityRestraint : public Restraint {
+  IMP::PointerMember<UnaryFunction> score_func_;
   ParticleIndex a_;
   ParticleIndex b_;
   int n_sds_; // The distance per residue
-  IMP::PointerMember<UnaryFunction> score_func_;
   
  public:
   //! Create the restraint.
@@ -66,7 +66,7 @@ class IMPTHREADINGEXPORT StructureElementConnectivityRestraint : public Restrain
 
   float get_model_distance() const;
 
-  ModelObjectsTemp do_get_inputs() const;
+  ModelObjectsTemp do_get_inputs() const IMP_OVERRIDE;
   IMP_OBJECT_METHODS(StructureElementConnectivityRestraint);
 };
 

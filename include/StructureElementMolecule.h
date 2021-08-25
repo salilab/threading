@@ -108,7 +108,7 @@ class IMPTHREADINGEXPORT StructureElementMolecule : public Decorator {
     // If there are no copies given, set all copies to zero
     // (We are assuming that all these molecules are singular)
     if(copies.size()==0){
-       for(int i=0;i<molnames.size();i++){copies.push_back(-1);};
+       for(unsigned i=0;i<molnames.size();i++){copies.push_back(-1);};
     }
     set_maxcopy_list(copies);
   }
@@ -171,11 +171,11 @@ class IMPTHREADINGEXPORT StructureElementMolecule : public Decorator {
     get_particle()->set_is_optimized(get_copy_key(), tf);
   }
 
-  bool get_molname_is_optimized() {
-    get_particle()->get_is_optimized(get_molname_index_key());
+  bool get_molname_is_optimized() const {
+    return get_particle()->get_is_optimized(get_molname_index_key());
   }
-  bool get_copy_is_optimized() {
-    get_particle()->get_is_optimized(get_copy_key());
+  bool get_copy_is_optimized() const {
+    return get_particle()->get_is_optimized(get_copy_key());
   }
 
   // **********************************************

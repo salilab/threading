@@ -30,10 +30,10 @@ IMPTHREADING_BEGIN_NAMESPACE
     \include ExampleRestraint.cpp
 */
 class IMPTHREADINGEXPORT ConditionalPairRestraint : public Restraint {
+  IMP::PointerMember<UnaryFunction> score_func_;
   ParticleIndex a_;
   ParticleIndex b_;
   double dpr_;
-  IMP::PointerMember<UnaryFunction> score_func_;
 
  public:
   //! Create the restraint.
@@ -51,7 +51,7 @@ class IMPTHREADINGEXPORT ConditionalPairRestraint : public Restraint {
   double unprotected_evaluate(DerivativeAccumulator *accum) const
       IMP_OVERRIDE;
 
-  ModelObjectsTemp do_get_inputs() const;
+  ModelObjectsTemp do_get_inputs() const IMP_OVERRIDE;
   IMP_OBJECT_METHODS(ConditionalPairRestraint);
 };
 
