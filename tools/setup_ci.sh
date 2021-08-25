@@ -13,4 +13,4 @@ conda config --remove channels defaults  # get conda-forge, not main, packages
 conda create --yes -q -n python${python_version} -c salilab -c conda-forge python=${python_version} pip imp-nightly gxx_linux-64 eigen swig cmake protobuf matplotlib
 eval "$(conda shell.bash hook)"
 conda activate python${python_version}
-pip install pytest-cov coverage
+pip install pytest-cov coverage pytest-flake8
