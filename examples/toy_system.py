@@ -25,7 +25,7 @@ def randomize_ses_start_residues(ses, seq_length):
             if len(ss) > s_len:
                 available_spots += ss[:-(s_len+2)]
 
-        #print available_spots
+        #print(available_spots)
 
         # pick an available spot
         spot = random.choice(available_spots)
@@ -46,7 +46,7 @@ def randomize_ses_start_residues(ses, seq_length):
                 break
 
 
-        #print spot, subseqs        
+        #print(spot, subseqs)
 
 
 
@@ -67,7 +67,7 @@ def read_psipred_ss2(ss2_file, ps):
         raise Exception("SS file does not have same # of residues as protein")
 
     for i in range(len(ss_probs)):
-        #print ps[i], ss_probs[i][0], ss_probs[i][1], ss_probs[i][2], ss_probs[i][0]
+        #print(ps[i], ss_probs[i][0], ss_probs[i][1], ss_probs[i][2], ss_probs[i][0])
         IMP.atom.SecondaryStructureResidue.setup_particle(ps[i], float(ss_probs[i][0]), float(ss_probs[i][1]), float(ss_probs[i][2]))
 
     return ps 
@@ -75,7 +75,7 @@ def read_psipred_ss2(ss2_file, ps):
 def sort_ses(ses):
     # Given a list of structural elements, sort them by increasing first residue
     res = sorted([(s.get_first_residue_number(), s) for s in ses], key=lambda x: x[0])
-    #print res
+    #print(res)
     return [x[1] for x in res]
 
 def setup_structural_element(root_hier, element, max_translation=1):
@@ -101,9 +101,9 @@ def setup_structural_element(root_hier, element, max_translation=1):
         #m = IMP.atom.Mass.setup_particle(root_hier.get_model(), np)
         xyz.set_coordinates(IMP.core.XYZ(p).get_coordinates())
         h.add_child(hp)
-        #print IMP.core.XYZ(p).get_coordinates() 
+        #print(IMP.core.XYZ(p).get_coordinates())
 
-    #print xyz
+    #print(xyz)
 
     IMP.threading.StructureElement.setup_particle(root_hier.get_model(), pi.get_index(), element[0], 1, element[1], 0)
     #se = se.setup_particle(p, element[0], 1, element[1], 0)
@@ -115,7 +115,7 @@ def setup_structural_element(root_hier, element, max_translation=1):
     se.set_keys_are_optimized(True)
     se.set_max_res(70)
 
-    #print "XXXxx", IMP.core.XYZ(root_hier.get_model(), h.get_children()[0].get_particle_index()), h.get_children()
+    #print("XXXxx", IMP.core.XYZ(root_hier.get_model(), h.get_children()[0].get_particle_index()), h.get_children())
     return se
 
 def setup_conditional_pair_restraint(p1, p2, length, xl_slope, constant):
@@ -138,7 +138,7 @@ def setup_length_restraint(s, length_slope):
     uf = IMP.core.Linear(s.get_number_of_coordinates(), -1*length_slope)
     sf = IMP.core.AttributeSingletonScore(uf, IMP.FloatKey("length"))
     r = IMP.core.SingletonRestraint(m, sf, s.get_particle())
-    print "SSR", r
+    print("SSR", r)
     return r
 
 def add_SECR(p1, p2, slope=1, dpr=3.4):
@@ -228,7 +228,7 @@ for xl in xls:
     p2 = IMP.atom.Selection(root_hier, chain_id='S', residue_index=xl[1]).get_selected_particle_indexes()[0]
 
     r = setup_conditional_pair_restraint(p1, p2, xl[2], xl_slope, xl_constant)
-    print "XL Setup between residues: ", xl[0], xl[1], " at a length of ", xl[2]
+    print("XL Setup between residues: ", xl[0], xl[1], " at a length of ", xl[2])
     rests.append(r)
 
 # Completeness Restraint
@@ -270,7 +270,7 @@ for s in Se_pos:
 # Scoring function is persistance length of the random coil?
 se_pairs = []
 for i in range(len(se)-1):
-    print "RESIS: ", se[i].get_last_residue_number(), se[i+1].get_first_residue_number()
+    print("RESIS: ", se[i].get_last_residue_number(), se[i+1].get_first_residue_number())
     se_pairs.append((se[i].get_particle_index(), se[i+1].get_particle_index()))
 
 
@@ -278,7 +278,7 @@ secrs = []
 for s in se_pairs:
     r = add_SECR(s[0], s[1])
     secrs.append(r)
-    print s, "NRES:", r.get_number_of_residues(), r.get_model_distance(), r.get_max_distance(), r.unprotected_evaluate(None)
+    print(s, "NRES:", r.get_number_of_residues(), r.get_model_distance(), r.get_max_distance(), r.unprotected_evaluate(None))
     rests.append(r)
 
 
@@ -290,19 +290,19 @@ for s in se_pairs:
 read_psipred_ss2("./data/toy_system_psipred.ss2", res_particles)
 
 #for i in res_particles:
-#    print IMP.atom.SecondaryStructureResidue(i)
+#    print(IMP.atom.SecondaryStructureResidue(i))
 
 se_part_indexes = [s.get_particle_index() for s in se]
 
 r = IMP.threading.SecondaryStructureParsimonyRestraint(m, se_part_indexes, seq_chain.get_particle_index(), 1.0)
 
-print r.get_baseline_probabilities(), r.unprotected_evaluate(None)
+print(r.get_baseline_probabilities(), r.unprotected_evaluate(None))
 
 rests.append(r)
 
 sf = IMP.core.RestraintsScoringFunction(rests)
 
-print "EVALUATE - NO COORDS", sf.evaluate(False)
+print("EVALUATE - NO COORDS", sf.evaluate(False))
 
 #########################
 # Set up Structure Elements Samplers
@@ -344,14 +344,14 @@ for s in se:
     sem.transform_coordinates()
 
     #for i in seq_chain.get_children():
-    #    print i, IMP.core.XYZ(i.get_particle())
+    #    print(i, IMP.core.XYZ(i.get_particle()))
     #for i in seq_chain.get_children():
-    #    print i, IMP.core.XYZ(i.get_particle())
+    #    print(i, IMP.core.XYZ(i.get_particle()))
     #sem.reject()
-    #print s.get_all_key_values()
+    #print(s.get_all_key_values())
     #for i in seq_chain.get_children():
-    #    print i, IMP.core.XYZ(i.get_particle())
-    #print IMP.atom.Selection(seq_chain, residue_indexes=s.get_resindex_list()).get_selected_particles()
+    #    print(i, IMP.core.XYZ(i.get_particle()))
+    #print(IMP.atom.Selection(seq_chain, residue_indexes=s.get_resindex_list()).get_selected_particles())
     sems.append(sem)
 
     mc.add_mover(sem)
@@ -370,41 +370,41 @@ def run_one_sim(mc, n_equil_frames, n_prod_frames):
 
 
 for r in rests:
-    print r, r.evaluate(False)
+    print(r, r.evaluate(False))
 
 for s in se:
-    print "KEY VALUES BEFORE:", s.get_all_key_values()
+    print("KEY VALUES BEFORE:", s.get_all_key_values())
 
 
 #exit()
 
-print "INIT EVALUATE", sf.evaluate(False), [(r.get_name(), r.evaluate(False)) for r in rests]
+print("INIT EVALUATE", sf.evaluate(False), [(r.get_name(), r.evaluate(False)) for r in rests])
 #init_score = sf.evaluate(False)
 
 '''
 for r in secrs:
-    print r.get_name(), r.evaluate(False), r.get_model_distance(), r.get_number_of_residues()
+    print(r.get_name(), r.evaluate(False), r.get_model_distance(), r.get_number_of_residues())
 
 for s in se:
-    print s.get_coordinates()[0], s.get_coordinates()[-1], s.get_first_residue_number(), s.get_last_residue_number(), s.get_resindex_list()
-    print seq[s.get_first_residue_number():s.get_last_residue_number()+1]
+    print(s.get_coordinates()[0], s.get_coordinates()[-1], s.get_first_residue_number(), s.get_last_residue_number(), s.get_resindex_list())
+    print(seq[s.get_first_residue_number():s.get_last_residue_number()+1])
 
 for mp in met_particles:
-    print "MP", IMP.core.XYZ(mp)
+    print("MP", IMP.core.XYZ(mp))
 
 for p in seq_chain.get_children():
-    print IMP.atom.Residue(p.get_particle()), IMP.core.XYZ(p.get_particle())
+    print(IMP.atom.Residue(p.get_particle()), IMP.core.XYZ(p.get_particle()))
 '''
 '''
 for s in se:
     s.set_start_res_key(s.get_start_res()-5)
-    print s.get_max_res()
+    print(s.get_max_res())
 for sem in sems:
     sem.transform_coordinates()
 '''
 
-print "NEW EVAL", sf.evaluate(False), [(r.get_name(), r.evaluate(False)) for r in rests]
-#print mc.get_kt()
+print("NEW EVAL", sf.evaluate(False), [(r.get_name(), r.evaluate(False)) for r in rests])
+#print(mc.get_kt())
 mc.set_kt(10)
 
 
@@ -425,34 +425,34 @@ for i in range(5000):
     score = output[-1]
     mpivs.set_value("score",score)
     rex.swap_temp(i, score)
-    print i, coolate_output(se, sf), [(r.get_name(), r.evaluate(False)) for r in rests], mc.get_number_of_upward_steps(), mc.get_number_of_downward_steps(), rex.nsuccess
+    print(i, coolate_output(se, sf), [(r.get_name(), r.evaluate(False)) for r in rests], mc.get_number_of_upward_steps(), mc.get_number_of_downward_steps(), rex.nsuccess)
 
 
 
 
-print all_output
+print(all_output)
 
 exit()
 
 
-print init_score
+print(init_score)
 exit()
 
 
 for s in se:
-    print "KEY VALUES AFTER:", s.get_all_key_values()
-print "FINAL EVAL", sf.evaluate(False), mc.get_best_accepted_energy(), i
+    print("KEY VALUES AFTER:", s.get_all_key_values())
+print("FINAL EVAL", sf.evaluate(False), mc.get_best_accepted_energy(), i)
 
 
-print mc.get_number_of_accepted_steps(), mc.get_number_of_proposed_steps()
+print(mc.get_number_of_accepted_steps(), mc.get_number_of_proposed_steps())
 
 
 
 for r in rests:
-    print r, r.evaluate(False),
+    print(r, r.evaluate(False),)
 
 IMP.atom.destroy(root_hier)
-print "destroyed"
+print("destroyed")
 
 
 
