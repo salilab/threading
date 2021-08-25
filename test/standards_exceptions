@@ -11,4 +11,4 @@ function_name_exceptions=[
     'StructureElementMover.transform_coordinates',
     'StructureElementMover.zero_coordinates']
 show_exceptions=[]
-spelling_exceptions=['resindex', 'pib']
+spelling_exceptions=['resindex', 'pib', 'molname', 'molnames', 'maxcopy']
