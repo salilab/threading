@@ -1,4 +1,14 @@
 value_object_exceptions=[]
-function_name_exceptions=[]
+function_name_exceptions=[
+    'LoopPairDistanceRestraint.calc_sphere_cap_distance',
+    'SSEThreadMover.transform_coordinates',
+    'SSEThreadMover.zero_coordinates',
+    'StructureElement.flip_polarity_key',
+    'StructureElement.get_resindex_list',
+    'StructureElementConnectivityRestraint.assign_particles',
+    'StructureElementConnectivityRestraint.get_pib',
+    'StructureElementMover.check_if_one_to_hundred_',
+    'StructureElementMover.transform_coordinates',
+    'StructureElementMover.zero_coordinates']
 show_exceptions=[]
-spelling_exceptions=[]
+spelling_exceptions=['resindex', 'pib']
