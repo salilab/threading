@@ -3,7 +3,7 @@
 //IMP_SWIG_VALUE_TEMPLATE(IMP::example, ExampleTemplateClassD)
 //IMP_SWIG_VALUE_TEMPLATE(IMP::example, ExampleTemplateClassD)
 IMP_SWIG_DECORATOR(IMP::threading, StructureElement, StructureElements)
-//IMP_SWIG_DECORATOR(IMP::threading, StructureElementMolecule, StructureElementMolecules)
+IMP_SWIG_DECORATOR(IMP::threading, StructureElementMolecule, StructureElementMolecules)
 IMP_SWIG_OBJECT(IMP::threading, StructureElementMover, StructureElementMovers)
 IMP_SWIG_OBJECT(IMP::threading, SSEThreadMover, SSEThreadMovers)
 //IMP_SWIG_OBJECT(IMP::threading, StructureElementExchangeableMover, StructureElementExchangeableMovers)
@@ -13,7 +13,7 @@ IMP_SWIG_OBJECT(IMP::threading, StructureElementConnectivityRestraint, Structure
 IMP_SWIG_OBJECT(IMP::threading, SecondaryStructureParsimonyRestraint, SecondaryStructureParsimonyRestraints);
 
 %include "IMP/threading/StructureElement.h"
-//%include "IMP/threading/StructureElementMolecule.h"
+%include "IMP/threading/StructureElementMolecule.h"
 %include "IMP/threading/StructureElementMover.h"
 %include "IMP/threading/SSEThreadMover.h"
 //%include "IMP/threading/StructureElementExchangeableMover.h"
