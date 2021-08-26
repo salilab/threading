@@ -1,183 +1,146 @@
 from __future__ import print_function
 import IMP
-import numpy
+import IMP.test
 import IMP.pmi.tools
 import IMP.atom
 import IMP.core
 import IMP.threading
 import os
 
-def sort_ses(ses):
-    # Given a list of structural elements, sort them by increasing first residue
-    res = sorted([(s.get_first_residue_number(), s) for s in ses], key=lambda x: x[0])
-    #print(res)
-    return [x[1] for x in res]
+class Tests(IMP.test.TestCase):
+    def sort_ses(self, ses):
+        # Given a list of structural elements, sort them by increasing first residue
+        res = sorted([(s.get_first_residue_number(), s) for s in ses], key=lambda x: x[0])
+        #print(res)
+        return [x[1] for x in res]
 
-def setup_structural_element(root_hier, element, max_translation=1):
-    ## SETUP STRUCTURAL ELEMENTS
-    # Get Particle Indexes for CA atoms 
-    # from residue range element[0]:element[1]
-    # From chain X
-    #print(range(element[0],element[0]+element[1]))
-    pis = IMP.atom.Selection(root_hier, chain_id="A", 
-                residue_indexes=range(element[0],element[0]+element[1]),
-                atom_type=IMP.atom.AT_CA).get_selected_particles()
+    def setup_structural_element(self, root_hier, element, sse_chain_id):
+        ## SETUP STRUCTURAL ELEMENTS
+        # Get Particle Indexes for CA atoms 
+        # from residue range element[0]:element[1]
+        # From chain X
+        #print(range(element[0],element[0]+element[1]))
+        pis = IMP.atom.Selection(root_hier, chain_id='A', 
+                    residue_indexes=range(element[0],element[0]+element[1]),
+                    atom_type=IMP.atom.AT_CA).get_selected_particles()
 
-    pi = IMP.Particle(root_hier.get_model())
+        pi = IMP.Particle(root_hier.get_model())
 
-    h = IMP.atom.Hierarchy.setup_particle(pi)
-    # Get XYZs
-    xyz = []
-    i = 0
-    for p in pis:
-        np = IMP.Particle(root_hier.get_model())
-        hp = IMP.atom.Hierarchy.setup_particle(np)
-        xyz = IMP.core.XYZ.setup_particle(np)
-        #m = IMP.atom.Mass.setup_particle(root_hier.get_model(), np)
-        xyz.set_coordinates(IMP.core.XYZ(p).get_coordinates())
-        h.add_child(hp)
-        #print(IMP.core.XYZ(p).get_coordinates())
+        h = IMP.atom.Hierarchy.setup_particle(pi)
 
-    #print(xyz)
+        # Get XYZs
+        xyz = []
+        i = 0
+        for p in pis:
+            np = IMP.Particle(root_hier.get_model())
+            hp = IMP.atom.Hierarchy.setup_particle(np)
+            xyz = IMP.core.XYZ.setup_particle(np)
+            xyz.set_coordinates(IMP.core.XYZ(p).get_coordinates())
+            h.add_child(hp)
 
-#    IMP.threading.StructureElement.setup_particle(root_hier.get_model(), pi.get_index(), element[0]-4, 1, element[1], 0, 'H')
-    IMP.threading.StructureElement.setup_particle(root_hier.get_model(), pi.get_index(), element[0]-4, 1, element[1], 0, element[-1])
-    #se = se.setup_particle(p, element[0], 1, element[1], 0)
+        # Setting up structure element, element[0] is start_res, 1 for polarity, element[1] for length of the element, 0 for offset and finally chain id
+        IMP.threading.StructureElement.setup_particle(root_hier.get_model(), pi.get_index(), element[0], 1, element[1], 0, sse_chain_id)
 
-    # Set up this element as a helix
-    if element[-1] == 'H':
-        IMP.atom.SecondaryStructureResidue.setup_particle(pi, 1, 0, 0)
-    elif element[-1] == 'S':
-        IMP.atom.SecondaryStructureResidue.setup_particle(pi, 0, 1, 0)
-    elif element[-1] == 'C':
-        IMP.atom.SecondaryStructureResidue.setup_particle(pi, 0, 0, 1)
-    else:
-        IMP.atom.SecondaryStructureResidue.setup_particle(pi, 0.33, 0.33, 0.33)
-        print("secondary structure type is not defined for the corresponding element")
+        # Set up this element as a helix or strand or a coil
 
-    se = IMP.threading.StructureElement(pi)
-    se.set_keys_are_optimized(True)
-
-    print(se.get_max_offset())
-
-    #print("XXXxx", IMP.core.XYZ(root_hier.get_model(), h.get_children()[0].get_particle_index()), h.get_children())
-    return se
-
-def setup_conditional_pair_restraint(p1, p2, length, constant):
-    #dps = IMP.core.DistancePairScore(IMP.core.HarmonicUpperBound(length, xl_slope))
-    r = IMP.threading.ConditionalPairRestraint(m, IMP.core.HarmonicUpperBound(length, xl_slope), 
-        p1, p2, constant)
-    return r
-
-def setup_pair_restraint(p1, p2, length):
-    #dps = IMP.core.DistancePairScore(IMP.core.HarmonicUpperBound(length, xl_slope))
-    r = IMP.core.DistanceRestraint(m, IMP.core.HarmonicUpperBound(length, xl_slope), 
-        p1, p2)
-    return r
-
-def setup_length_restraint(s):
-    # Setup a restraint that biases the structural element towards
-    # the length of the number of coordinates.
-
-    # score = -log(#)
-    uf = IMP.core.Linear(s.get_number_of_coordinates(), -1*length_slope)
-    sf = IMP.core.AttributeSingletonScore(uf, IMP.FloatKey("length"))
-    r = IMP.core.SingletonRestraint(m, sf, s.get_particle())
-    print("SSR", r)
-    return r
-
-def add_SECR(p1, p2, slope=1, dpr=3.4):
-    r = IMP.threading.StructureElementConnectivityRestraint(m, IMP.core.HarmonicUpperBound(0, slope), p1, p2, dpr, "")
-    return r
-
-def add_all_SECR(se_list, slope=1, dpr=3.4):
-    SECR_restraints = []
-    for i in range(len(se_list-1)):
-        p1 = se_list[i].get_particle_index()
-        p2 = se_list[i+1].get_particle_index()
-        rs.append(IMP.threading.StructureElementConnectivityRestraint(m, IMP.core.HarmonicUpperBound(0, slope), p1, p2, dpr, ""))
-
-    return SECR_restraints
-
-def modify_all_SECR(se_list, rst_list):
-
-    for i in range(len(rst_list)):
-        p1 = se_list[i].get_particle_index()
-        p2 = se_list[i+1].get_particle_index()
-        rst_list.assign_particles(p1, p2)
-
-    return SECR_restraints
-
-# The "true" sequence
-#  MET at 11 and 37
-seq = "SQPAKKTYTWNTKEEAKQAFKEALKEKRVPSNASWEQAMKMIINDPRYSALAKLSEKKQAFNAYKVQTEK"
-# A toy system consisting of the two helices and 50 residues.
-
-# Restraint Weights
-length_slope = 0.1
-xl_slope = 0.1
-semet_slope = 0.1
-psipred_slope = 0.1
+        probmap = {'H': (1, 0, 0), 'S': (0, 1, 0), 'C': (0, 0, 1)}
+        prob = probmap.get(element[-1], (0.33, 0.33, 0.33))
+        IMP.atom.SecondaryStructureResidue.setup_particle(pi, *prob)
 
 
-m = IMP.Model()
-######################################
-DATADIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'input'))
-pdbfile = os.path.join(DATADIR, "pdb2lv9_A.ent")
-root_hier = IMP.atom.read_pdb(pdbfile, m)
-#IMP.atom.show_molecular_hierarchy(root_hier)
+        se = IMP.threading.StructureElement(pi)
+        se.set_keys_are_optimized(True)
 
-# Define Structural Elements
-# These are the residues in the PDB that correspond to structural elements.
-# (start_res, length, SSID)
-#-------------------------
-#elements=[(3,8,'H'),(19,19,'H')]#, (56,8,'H')]
-elements=[(135,11,'C'),(113,16,'H'), (148,12,'H')]
+        return se
+    def set_up_system_cal_score(self, pdb_name, seq, elements, seq_chain_id, sse_chain_id):
+#       seq = 'SQPAKKTYTWNTKEEAKQAFKEALKEKRVPSNASWEQAMKMIINDPRYSALAKLSEKKQAFNAYKVQTEK'
 
-se = []
+        m = IMP.Model()
+        ######################################
+        DATADIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'input'))
+        pdbfile = os.path.join(DATADIR, pdb_name)
+        root_hier = IMP.atom.read_pdb(pdbfile, m)
 
-for e in elements:
-    se.append(setup_structural_element(root_hier, e))
 
-se = sort_ses(se)
-#######################
-# Set up Sequence
-#######################
-seq_chain = IMP.atom.Chain.setup_particle(IMP.Particle(m), "S")
-root_hier.add_child(seq_chain)
-for i in range(len(seq)):
-    res = IMP.atom.Residue.setup_particle(IMP.Particle(m),
-                                                    IMP.pmi.alphabets.amino_acid.get_residue_type_from_one_letter_code(seq[i]),
-                                                    i+1)
-    IMP.atom.Mass.setup_particle(res.get_particle(), IMP.atom.get_mass(res.get_residue_type()))
-    IMP.core.XYZR.setup_particle(res.get_particle())
-    IMP.atom.SecondaryStructureResidue.setup_particle(res.get_particle(), 0.8, 0, 0.2)
-    seq_chain.add_child(res)
 
-#######################
-# Set up Scoring Function
-#######################
+        se = []
 
-# SS Parsimony Restraint
-ssp_weight = 1.0
+        for e in elements:
+            se.append(self.setup_structural_element(root_hier, e, sse_chain_id))
 
-# Restraint evaluated at the SE level? Pass SE and seq_chain.  
-# Have restraint look up residue from the seq_chain and get SS 
-a = IMP.atom.Hierarchy(seq_chain.get_particle()).get_children()
-print(IMP.atom.SecondaryStructureResidue(m, a[0].get_particle_index()).get_all_probabilities())
-#print(dir(se[0]))
-#se_par = []
+        se = self.sort_ses(se)
 
-#print(IMP.atom.SecondaryStructureResidue(m, s.get_particle_index()).get_all_probabilities())
-#    se_par.append(s.get_particle())
+        #######################
+        # Set up Sequence
+        #######################
 
-#    print(IMP.atom.SecondaryStructureResidue(m, seq_chain.get_particle_index()).get_all_probabilities())
-#    print(seq_chain.get_children_indexes())
-par_res = IMP.threading.SecondaryStructureParsimonyRestraint(m, [s.get_particle_index() for s in se], seq_chain.get_particle(), 0.2)
-#    par_res = IMP.threading.SecondaryStructureParsimonyRestraint(m, seq_chain.get_children_indexes(), s.get_particle().get_index(), 0.2)
-#    print(par_res.evaluate(False))
-a_value  = par_res.evaluate(False)
-print(a_value)
+        seq_chain = IMP.atom.Chain.setup_particle(IMP.Particle(m), seq_chain_id)
+        seq_chain.set_name(seq_chain.get_id())
 
+        root_hier.add_child(seq_chain)
+
+        for i in range(len(seq)):
+            res = IMP.atom.Residue.setup_particle(IMP.Particle(m),
+                                                            IMP.pmi.alphabets.amino_acid.get_residue_type_from_one_letter_code(seq[i]),
+                                                            i+1)
+            IMP.atom.Mass.setup_particle(res.get_particle(), IMP.atom.get_mass(res.get_residue_type()))
+            IMP.core.XYZR.setup_particle(res.get_particle())
+            IMP.atom.SecondaryStructureResidue.setup_particle(res.get_particle(), 1.0, 0.0, 0.0)
+            seq_chain.add_child(res)
+
+        #######################
+        # Set up Scoring Function
+        #######################
+
+        # SS Parsimony Restraint
+        psipred_slope = 1.0
+
+        # Restraint evaluated at the SE level, Pass SE and seq_chain.  
+        # Have restraint look up residue from the seq_chain and get SS 
+        chain_par = IMP.atom.Hierarchy(seq_chain.get_particle()).get_children()
+
+        # get the secondary structure probabilities of the first chain residue
+#        print(IMP.atom.SecondaryStructureResidue(m, chain_par[0].get_particle_index()).get_all_probabilities())
+
+        par_res = IMP.threading.SecondaryStructureParsimonyRestraint(m, [s.get_particle_index() for s in se], seq_chain.get_particle(), psipred_slope)
+        score  = par_res.unprotected_evaluate(None)
+        return score
+
+    def test_parsimony_res(self):
+        pdb_name = 'pdb2lv9_A.ent'
+        seq = 'SQPAKKTYTWNTKEEAKQAF'
+        seq_chain_id = 'B'
+        sse_chain_id = 'B'
+        # Define Structural Elements
+        # These are the residues in the PDB that correspond to structural elements.
+        # (start_res, length, SSID)
+        #-------------------------
+
+        # all helix
+
+        elements=[(3, 10,'H')]
+
+        score = self.set_up_system_cal_score(pdb_name, seq, elements, seq_chain_id, sse_chain_id)
+
+        # since 10 residues should be coiled ans our sequence length is 20 then (-0.1*10)/20
+        self.assertEqual(round(score, 2), -0.05)
+
+        # check what happens when the chain ids are not matching
+        sse_chain_id = 'A'
+        score = self.set_up_system_cal_score(pdb_name, seq, elements, seq_chain_id, sse_chain_id)
+        # since chain ids are not matching, then (-0.1*20)/20 
+        self.assertEqual(round(score, 2), -0.1)
+
+        # check when sse type is not helix, while the sequence based sse assignment suggests it is a helix 
+        
+        elements=[(3, 10,'S')]
+        score = self.set_up_system_cal_score(pdb_name, seq, elements, seq_chain_id, sse_chain_id)
+        # since chain ids are not matching, then (-0.1*20)/20
+        self.assertEqual(round(score, 2), -0.1)
+
+
+
+if __name__ == '__main__':
+    IMP.test.main()
 
 
