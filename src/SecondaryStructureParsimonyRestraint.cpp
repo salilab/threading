@@ -48,10 +48,12 @@ double SecondaryStructureParsimonyRestraint::unprotected_evaluate(DerivativeAccu
 
     // Get chain
     std::string chain = threading::StructureElement(get_model(),ses_[nse]).get_chain();
+
     if (boost::algorithm::contains(chain, prot_chain)) {
-    
+
         // First, get the residue indexes for this SE.
         Ints resinds = threading::StructureElement(get_model(), ses_[nse]).get_resindex_list();
+
         // Second, get the probabilities for this SE
         Floats ses_ss_prob = atom::SecondaryStructureResidue(get_model(), ses_[nse]).get_all_probabilities();
 
@@ -70,15 +72,18 @@ double SecondaryStructureParsimonyRestraint::unprotected_evaluate(DerivativeAccu
   // Loop over all the residues
   // Compare to sequence ss_probs
   for (int j = 0; j < nres; j++){
-
     Floats seq_prob = atom::SecondaryStructureResidue(get_model(), resis[j].get_particle_index()).get_all_probabilities();
     std::vector<float> se_prob = ses_ss_probs[j];
+
     float dot = 0;
     for (int k = 0; k < 3; k++){
-        //std::cout << "seq_prob " << seq_prob[k] << " se_prob " << se_prob[k] << std::endl;
+
       dot += seq_prob[k] * se_prob[k];
     }
-    score += -1 * log(dot+0.0001); // to avoid log(0) problem
+    if (dot < 0.001){
+        score += -0.1;
+    } else {score += -1.0 * log(dot);} // to avoid log(0) problem
+    //score += -1 * log(dot+0.0001); // to avoid log(0) problem
     //std::cout << "RES# " << j << " (" << se_prob[0] << se_prob[1] << se_prob[2] << "), (" << seq_prob[0] << seq_prob[1] << seq_prob[2] << ") " << dot << std::endl;
 
   }
