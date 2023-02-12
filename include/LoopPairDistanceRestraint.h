@@ -98,10 +98,9 @@ class IMPTHREADINGEXPORT LoopPairDistanceRestraint : public Restraint {
 
   //algebra::Vector3D get_cap_center(ParticleIndex p_sel) const;
 
-  double unprotected_evaluate(DerivativeAccumulator *accum) const
-      IMP_OVERRIDE;
+  double unprotected_evaluate(DerivativeAccumulator *accum) const override;
 
-  ModelObjectsTemp do_get_inputs() const IMP_OVERRIDE;
+  ModelObjectsTemp do_get_inputs() const override;
   IMP_OBJECT_METHODS(LoopPairDistanceRestraint);
 };
 

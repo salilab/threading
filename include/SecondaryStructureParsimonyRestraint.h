@@ -40,9 +40,8 @@ class IMPTHREADINGEXPORT SecondaryStructureParsimonyRestraint : public Restraint
   //ParticleIndex b_; // The sequence residue
   //Float c_;
 
-  double unprotected_evaluate(DerivativeAccumulator *accum) const
-      IMP_OVERRIDE;
-  ModelObjectsTemp do_get_inputs() const IMP_OVERRIDE;
+  double unprotected_evaluate(DerivativeAccumulator *accum) const override;
+  ModelObjectsTemp do_get_inputs() const override;
   IMP_OBJECT_METHODS(SecondaryStructureParsimonyRestraint);
 
 void set_baseline_ss_probabilities(Float a, Float b, Float c) {

@@ -57,13 +57,13 @@ class IMPTHREADINGEXPORT StructureElementMover : public IMP::core::MonteCarloMov
  }
 
  protected:
-  virtual ModelObjectsTemp do_get_inputs() const IMP_OVERRIDE;
+  virtual ModelObjectsTemp do_get_inputs() const override;
 
   //! Move particle attributes within a ball, as specified in constructor
-  virtual IMP::core::MonteCarloMoverResult do_propose() IMP_OVERRIDE;
+  virtual IMP::core::MonteCarloMoverResult do_propose() override;
 
   //! restore original attributes from before do_propose
-  virtual void do_reject() IMP_OVERRIDE;
+  virtual void do_reject() override;
   IMP_OBJECT_METHODS(StructureElementMover);
 
   bool check_if_one_to_hundred_(float i){

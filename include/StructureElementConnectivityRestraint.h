@@ -41,8 +41,7 @@ class IMPTHREADINGEXPORT StructureElementConnectivityRestraint : public Restrain
                     float n_sds,
                     std::string name = "EndToEndRestraint %1%");
 
-  double unprotected_evaluate(DerivativeAccumulator *accum) const
-      IMP_OVERRIDE;
+  double unprotected_evaluate(DerivativeAccumulator *accum) const override;
 
   void assign_particles(ParticleIndex a, ParticleIndex b) {
     a_ = a;
@@ -66,7 +65,7 @@ class IMPTHREADINGEXPORT StructureElementConnectivityRestraint : public Restrain
 
   float get_model_distance() const;
 
-  ModelObjectsTemp do_get_inputs() const IMP_OVERRIDE;
+  ModelObjectsTemp do_get_inputs() const override;
   IMP_OBJECT_METHODS(StructureElementConnectivityRestraint);
 };
 
