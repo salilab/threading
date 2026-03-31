@@ -156,6 +156,7 @@ float StructureElementConnectivityRestraint::get_mean_distance_per_residue() con
 
 double StructureElementConnectivityRestraint::unprotected_evaluate(DerivativeAccumulator *accum)
     const {
+  if (accum) IMP_THROW("Derivatives not implemented", ModelException);
   //IMP_CHECK_OBJECT(a_.get());
   //IMP_CHECK_OBJECT(b_.get());
   IMP_CHECK_OBJECT(score_func_);

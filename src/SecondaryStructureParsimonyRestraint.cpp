@@ -29,6 +29,7 @@ SecondaryStructureParsimonyRestraint::SecondaryStructureParsimonyRestraint(Model
 
 double SecondaryStructureParsimonyRestraint::unprotected_evaluate(DerivativeAccumulator *accum)
     const {
+  if (accum) IMP_THROW("Derivatives not implemented", ModelException);
 
   // Ge the number of residues
   int nres = atom::Hierarchy(get_model(), b_).get_children().size();

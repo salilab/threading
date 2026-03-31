@@ -357,6 +357,7 @@ double LoopPairDistanceRestraint::get_pair_distance(ParticleIndex pa,
 
 double LoopPairDistanceRestraint::unprotected_evaluate(DerivativeAccumulator *accum)
     const {
+  if (accum) IMP_THROW("Derivatives not implemented", ModelException);
 
 
   double distance;
