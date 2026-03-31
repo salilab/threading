@@ -41,7 +41,7 @@ def calc_resis_from_keys(se_length, keys):
         # Start with the end of the list
         for i in range(int(se_length-keys[2]-keys[3])):
             outlist.append(0) 
-        # insert the residues at the begining (reverse order)
+        # insert the residues at the beginning (reverse order)
         for i in range(int(keys[2])):
             outlist.insert(int(keys[0] + i),0)
         # now put the offset Xs in the beginning

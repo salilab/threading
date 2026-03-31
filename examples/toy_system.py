@@ -267,7 +267,7 @@ for s in Se_pos:
 # Structural domain : sequence of SEs.  Use the sequence to 
 # add the E2E restraint.  model distance = last coord of SE1 - first coord of SE2.
 # evaluated distance = (first resid of SE1 - last resid of SE2) * res_dist
-# Scoring function is persistance length of the random coil?
+# Scoring function is persistence length of the random coil?
 se_pairs = []
 for i in range(len(se)-1):
     print("RESIS: ", se[i].get_last_residue_number(), se[i+1].get_first_residue_number())

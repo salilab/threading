@@ -1264,7 +1264,7 @@ class SSEShiftMover(IMP.threading.SSEThreadMover):
         self.system.start_res_list[self.seid] = (self.old_chain,
                                                  self.old_start_res)
 
-        # If new start res is not zero, then zero out the coordiantes we added
+        # If new start res is not zero, then zero out the coordinates we added
         if new_sr != 0:
             self.zero_coordinates(se_pix)
 
@@ -1646,7 +1646,7 @@ SSEThread command-line usage:
 
 python SSEThread.py mode [args]
 
-Available modes: setup sample anaysis
+Available modes: setup sample analysis
 
 # Setup:
 python SSEThread.py setup -c config_file -o output_folder

@@ -81,7 +81,7 @@ IMP::core::MonteCarloMoverResult StructureElementMover::do_propose() {
         se.set_offset_key(new_offset);
     }
   };
-  // With the new key values, move the SE coordiantes to the sequence hierarchy
+  // With the new key values, move the SE coordinates to the sequence hierarchy
 
   transform_coordinates();
   return IMP::core::MonteCarloMoverResult(h.get_children(), 1.0);

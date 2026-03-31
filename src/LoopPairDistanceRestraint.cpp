@@ -67,7 +67,7 @@ static float hh_sds_[30] = {0.027, 0.284, 0.397, 0.441, 0.483, 0.499, 0.504, 0.5
 
 double LoopPairDistanceRestraint::calc_sphere_cap_distance(float R, float d, float alpha) const {
   // Given the radius of the sphere, R, distance from the center of the sphere to the chord, r, 
-  // and an angle from the sphere cap plane, alpha = 0-pi/2, return the distnace from the center
+  // and an angle from the sphere cap plane, alpha = 0-pi/2, return the distance from the center
   // of the sphere cap circle to the points on the spherical segment at angle alpha
 
   // The solution to this is quadratic and for values of alpha from -0.5 - pi/2, the
