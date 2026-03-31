@@ -1,3 +1,5 @@
+[![build](https://github.com/salilab/threading/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/salilab/threading/actions/workflows/build.yml)
+
 \brief New module created by make-module.py on Tue Sep 12 16:30:58 2017
 
 This module provides tools to sample sequence threading solutions for a known structure with ambiguous residue assignment and score these solutions with experimental data and other information.
