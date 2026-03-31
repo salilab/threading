@@ -1,4 +1,5 @@
 [![build](https://github.com/salilab/threading/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/salilab/threading/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/salilab/threading/branch/main/graph/badge.svg)](https://codecov.io/gh/salilab/threading)
 
 \brief New module created by make-module.py on Tue Sep 12 16:30:58 2017
 
